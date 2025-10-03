@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Search, Heart, User, Menu, MessageCircle, Sparkles, Plus } from "lucide-react";
+import { Search, Heart, User, Menu, MessageCircle, Sparkles, Plus, Anchor, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -10,33 +10,67 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-background/98 backdrop-blur-2xl border-b border-border/50 shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 py-4">
+    <header className="sticky top-0 z-50 bg-background/98 backdrop-blur-3xl border-b-2 border-border/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)] relative overflow-hidden">
+      {/* Decorative wave pattern background */}
+      <div className="absolute inset-0 opacity-[0.03]">
+        <svg className="absolute bottom-0 w-full h-8" viewBox="0 0 1200 120" preserveAspectRatio="none">
+          <path d="M0,0 Q300,40 600,20 T1200,0 L1200,120 L0,120 Z" fill="currentColor" className="text-primary"/>
+        </svg>
+      </div>
+      
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-blue-600/5"></div>
+      
+      <div className="relative max-w-7xl mx-auto px-4 py-5">
         <div className="flex items-center justify-between gap-4">
           <Link href="/">
             <a className="flex items-center gap-3 group" data-testid="link-home">
-              <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary via-blue-600 to-primary text-primary-foreground font-black text-3xl shadow-2xl transition-all duration-300 group-hover:scale-105 bg-[length:200%_100%] group-hover:bg-[position:100%_0]">
-                B
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/50 to-blue-600/50 blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              {/* Enhanced logo with anchor */}
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-br from-primary/30 to-blue-600/30 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+                <div className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-blue-600 to-primary text-primary-foreground shadow-2xl transition-all duration-500 group-hover:scale-110 overflow-hidden">
+                  {/* Shimmer effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                  
+                  {/* Anchor icon */}
+                  <Anchor className="w-8 h-8 relative z-10" />
+                  
+                  {/* Background waves */}
+                  <Waves className="absolute bottom-1 left-1/2 -translate-x-1/2 w-10 h-10 opacity-20" />
+                </div>
               </div>
+              
               <div className="hidden sm:block">
-                <div className="font-black text-2xl bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent tracking-tight">Boat</div>
-                <div className="text-xs text-muted-foreground font-semibold -mt-1">Premium Marketplace</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-3xl bg-gradient-to-r from-primary via-blue-600 to-primary bg-clip-text text-transparent animate-gradient-shift">Boat</span>
+                  <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                </div>
+                <div className="text-sm text-muted-foreground font-bold -mt-1 tracking-wide">⚓ Морская площадка</div>
               </div>
             </a>
           </Link>
 
           <div className="hidden md:flex flex-1 max-w-2xl">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Поиск катеров и яхт..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full"
-                data-testid="input-search"
-              />
+            <div className="relative w-full group/search">
+              {/* Search input glow */}
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-blue-600/20 rounded-xl blur-md opacity-0 group-focus-within/search:opacity-100 transition-opacity duration-300"></div>
+              
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within/search:text-primary transition-colors" />
+                <Input
+                  type="search"
+                  placeholder="Поиск катеров и яхт..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-12 pr-4 h-12 rounded-xl border-2 border-border/60 bg-background/60 backdrop-blur-sm focus-visible:border-primary/60 transition-all font-medium"
+                  data-testid="input-search"
+                />
+                {searchQuery && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -61,12 +95,15 @@ export default function Header() {
             <Button
               variant="default"
               size="lg"
-              className="hidden md:flex bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg font-bold rounded-xl px-6"
+              className="hidden md:flex relative bg-gradient-to-r from-primary via-blue-600 to-primary shadow-2xl font-black rounded-xl px-8 h-12 overflow-hidden group bg-[length:200%_100%] hover:bg-[position:100%_0]"
               data-testid="button-add-listing"
             >
-              <Plus className="w-5 h-5 mr-2" />
-              Разместить
-              <Sparkles className="w-4 h-4 ml-2 opacity-70" />
+              {/* Shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+              
+              <Plus className="w-5 h-5 mr-2 relative z-10 group-hover:rotate-90 transition-transform duration-300" />
+              <span className="relative z-10">Разместить</span>
+              <Sparkles className="w-4 h-4 ml-2 relative z-10 opacity-80 animate-pulse" />
             </Button>
             <Button
               variant="ghost"

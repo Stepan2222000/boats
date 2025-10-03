@@ -1,4 +1,4 @@
-import { Search, Sparkles, TrendingUp, Zap, Globe, Award, Shield, ChevronRight } from "lucide-react";
+import { Search, Sparkles, TrendingUp, Zap, Globe, Award, Shield, ChevronRight, Anchor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -89,16 +89,18 @@ export default function HeroSearch() {
         <div className="absolute top-0 left-1/2 w-px h-full bg-gradient-to-b from-transparent via-blue-600/50 to-transparent"></div>
         <div className="absolute top-0 left-3/4 w-px h-full bg-gradient-to-b from-transparent via-primary/50 to-transparent"></div>
       </div>
+      
+      {/* Decorative wave at bottom */}
+      <div className="absolute bottom-0 left-0 w-full opacity-[0.06]">
+        <svg className="w-full h-32" viewBox="0 0 1200 120" preserveAspectRatio="none">
+          <path d="M0,0 Q150,50 300,25 T600,25 T900,25 T1200,25 L1200,120 L0,120 Z" fill="currentColor" className="text-primary"/>
+        </svg>
+      </div>
 
       <div className="relative w-full max-w-7xl mx-auto px-4 py-16 md:py-24">
         <div className="max-w-5xl mx-auto text-center">
           {/* Ultra-premium AI Badge with multiple animation layers */}
           <div className="relative inline-block mb-12 group/badge">
-            {/* Outer rotating ring */}
-            <div className="absolute -inset-4 opacity-0 group-hover/badge:opacity-100 transition-opacity duration-500">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary via-blue-600 to-primary blur-xl animate-rotate-slow"></div>
-            </div>
-            
             {/* Pulsing glow */}
             <div className="absolute -inset-2 bg-gradient-to-r from-primary via-blue-600 to-primary rounded-full blur-xl opacity-60 animate-glow"></div>
             
@@ -146,14 +148,14 @@ export default function HeroSearch() {
           </h1>
           
           <p className="text-2xl md:text-4xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed font-semibold">
-            <span className="text-foreground">Крупнейшая</span> международная платформа водной техники
+            <span className="text-foreground">⚓ Крупнейшая</span> международная платформа водной техники
           </p>
 
-          {/* Premium trust badges */}
+          {/* Premium trust badges with maritime theme */}
           <div className="flex flex-wrap items-center justify-center gap-8 mb-20 text-lg md:text-xl">
             <div className="group flex items-center gap-3 px-6 py-3 rounded-2xl bg-background/40 backdrop-blur-sm border border-border/40 hover:border-primary/40 transition-all duration-300 hover-elevate">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-blue-600/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Globe className="w-5 h-5 text-primary" />
+                <Anchor className="w-5 h-5 text-primary" />
               </div>
               <span className="font-bold text-foreground">Россия и СНГ</span>
             </div>
