@@ -164,7 +164,7 @@ export default function SearchResultsPage() {
             </div>
 
             {data.boats.length > 0 ? (
-              <div className="flex flex-col gap-3 md:gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
                 {data.boats.map((boat: Boat) => (
                   <BoatCard
                     key={boat.id}
@@ -177,6 +177,10 @@ export default function SearchResultsPage() {
                     length={boat.length ? parseFloat(boat.length) : undefined}
                     photoCount={boat.photoCount || 0}
                     isPromoted={boat.isPromoted || false}
+                    sellerName={boat.sellerName || "BESTMARINE"}
+                    sellerRating={boat.sellerRating ? parseFloat(boat.sellerRating) : 4.7}
+                    sellerReviewCount={boat.sellerReviewCount || 49}
+                    phone={boat.phone || "+7 (999) 123-45-67"}
                   />
                 ))}
               </div>

@@ -99,7 +99,7 @@ export default function HomePage() {
             </Button>
           </Link>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {isLoading ? (
             <div className="col-span-full text-center py-20">
               <div className="inline-block animate-pulse text-2xl font-black text-primary">
@@ -119,6 +119,10 @@ export default function HomePage() {
                 length={boat.length ? parseFloat(boat.length) : undefined}
                 photoCount={boat.photoCount || 0}
                 isPromoted={boat.isPromoted || false}
+                sellerName={boat.sellerName || "BESTMARINE"}
+                sellerRating={boat.sellerRating ? parseFloat(boat.sellerRating) : 4.7}
+                sellerReviewCount={boat.sellerReviewCount || 49}
+                phone={boat.phone || "+7 (999) 123-45-67"}
               />
             ))
           ) : (

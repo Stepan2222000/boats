@@ -17,6 +17,10 @@ export const boats = pgTable("boats", {
   location: text("location").notNull(),
   photoCount: integer("photo_count").default(0),
   isPromoted: boolean("is_promoted").default(false),
+  sellerName: text("seller_name").default("BESTMARINE"),
+  sellerRating: decimal("seller_rating", { precision: 2, scale: 1 }).default("4.7"),
+  sellerReviewCount: integer("seller_review_count").default(49),
+  phone: text("phone").default("+7 (999) 123-45-67"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -31,6 +35,10 @@ export const insertBoatSchema = createInsertSchema(boats).omit({
   length: z.number().positive().optional(),
   photoCount: z.number().min(0).optional(),
   isPromoted: z.boolean().optional(),
+  sellerName: z.string().optional(),
+  sellerRating: z.number().min(0).max(5).optional(),
+  sellerReviewCount: z.number().min(0).optional(),
+  phone: z.string().optional(),
 });
 
 export type InsertBoat = z.infer<typeof insertBoatSchema>;
