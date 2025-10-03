@@ -12,6 +12,7 @@ This is a boat marketplace application built with React, Express, and PostgreSQL
 - Enhanced AI prompts: Updated interpretSearchQuery to extract detailed features (size, cabin, etc.) not just basic parameters
 - Added admin panel: New /admin route with tabbed interface for managing AI model selection and custom prompts (includes database schema aiSettings table and API endpoints)
 - Redesigned boat cards: **Horizontal layout** with image on left (fixed width 192-256px), content on right. Prominent price, blue title, compact metadata. Search results display cards in vertical stack for maximum photo visibility
+- Added admin access button: Small semi-transparent Settings icon button in footer with prompt-based authentication (login: root, password: root)
 
 ## User Preferences
 

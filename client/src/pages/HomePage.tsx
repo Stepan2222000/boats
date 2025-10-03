@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import HeroSearch from "@/components/HeroSearch";
@@ -6,13 +6,28 @@ import BoatCard from "@/components/BoatCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, Shield, Users, Sparkles, Anchor, MessageCircle } from "lucide-react";
+import { TrendingUp, Shield, Users, Sparkles, Anchor, MessageCircle, Settings } from "lucide-react";
 import type { Boat } from "@shared/schema";
 
 export default function HomePage() {
+  const [, setLocation] = useLocation();
   const { data: boats, isLoading } = useQuery<Boat[]>({
     queryKey: ["/api/boats"],
   });
+
+  const handleAdminAccess = () => {
+    const username = prompt("Логин:");
+    if (username === null) return;
+    
+    const password = prompt("Пароль:");
+    if (password === null) return;
+    
+    if (username === "root" && password === "root") {
+      setLocation("/admin");
+    } else {
+      alert("Неверный логин или пароль");
+    }
+  };
 
   const popularSearches = [
     "Sea Ray",
@@ -260,6 +275,14 @@ export default function HomePage() {
                 <a href="#" className="w-10 h-10 rounded-xl bg-background/60 border border-border/40 flex items-center justify-center hover-elevate transition-all hover:border-primary/40 group">
                   <MessageCircle className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </a>
+                <button 
+                  onClick={handleAdminAccess}
+                  className="w-8 h-8 rounded-lg bg-background/40 border border-border/30 flex items-center justify-center hover-elevate transition-all hover:border-primary/30 group opacity-30 hover:opacity-100"
+                  data-testid="button-admin-access"
+                  title="Админ-панель"
+                >
+                  <Settings className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </button>
               </div>
             </div>
             
