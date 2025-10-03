@@ -5,7 +5,7 @@ import BoatCard from "@/components/BoatCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, Shield, Users, Sparkles } from "lucide-react";
+import { TrendingUp, Shield, Users, Sparkles, Anchor, MessageCircle } from "lucide-react";
 
 export default function HomePage() {
   const featuredBoats = [
@@ -233,51 +233,147 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="relative border-t bg-gradient-to-b from-background to-muted/20 mt-24">
-        <div className="max-w-7xl mx-auto px-4 py-16">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-blue-600 text-primary-foreground font-bold text-xl shadow-lg">
-                  B
+      <footer className="relative border-t border-border/40 bg-gradient-to-b from-background via-muted/10 to-muted/20 mt-32 overflow-hidden">
+        {/* Decorative wave at top */}
+        <div className="absolute top-0 left-0 w-full opacity-[0.04] -translate-y-full">
+          <svg className="w-full h-24" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,0 Q150,50 300,25 T600,25 T900,25 T1200,25 L1200,120 L0,120 Z" fill="currentColor" className="text-primary"/>
+          </svg>
+        </div>
+        
+        {/* Gradient backgrounds */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-600/5"></div>
+        
+        {/* Floating particles */}
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary/20 rounded-full blur-sm animate-particle-float"></div>
+        <div className="absolute top-1/3 right-1/3 w-3 h-3 bg-blue-600/20 rounded-full blur-sm animate-particle-float" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-primary/20 rounded-full blur-sm animate-particle-float" style={{ animationDelay: '4s' }}></div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 py-20">
+          <div className="grid md:grid-cols-4 gap-16 mb-16">
+            {/* Company Info */}
+            <div className="md:col-span-1">
+              <div className="flex items-center gap-3 mb-6 group">
+                <div className="relative">
+                  <div className="absolute -inset-1 bg-gradient-to-br from-primary/30 to-blue-600/30 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary via-blue-600 to-primary text-primary-foreground shadow-2xl overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                    <Anchor className="w-7 h-7 relative z-10" />
+                  </div>
                 </div>
-                <span className="font-bold text-xl">Boat</span>
+                <div>
+                  <div className="font-black text-2xl bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">Boat</div>
+                  <div className="text-xs text-muted-foreground font-bold">⚓ Морская площадка</div>
+                </div>
               </div>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed mb-6 font-medium">
                 Крупнейший маркетплейс катеров и водной техники в России
               </p>
+              <div className="flex gap-3">
+                <a href="#" className="w-10 h-10 rounded-xl bg-background/60 border border-border/40 flex items-center justify-center hover-elevate transition-all hover:border-primary/40 group">
+                  <Sparkles className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </a>
+                <a href="#" className="w-10 h-10 rounded-xl bg-background/60 border border-border/40 flex items-center justify-center hover-elevate transition-all hover:border-primary/40 group">
+                  <MessageCircle className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </a>
+              </div>
             </div>
+            
+            {/* Покупателям */}
             <div>
-              <h3 className="font-bold mb-4 text-lg">Покупателям</h3>
-              <ul className="space-y-3 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Как искать</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Безопасность</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">FAQ</a></li>
+              <h3 className="font-black text-lg mb-6 flex items-center gap-2">
+                <div className="w-1 h-6 bg-gradient-to-b from-primary to-blue-600 rounded-full"></div>
+                Покупателям
+              </h3>
+              <ul className="space-y-4">
+                <li>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium hover:translate-x-1 inline-block">
+                    Как искать
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium hover:translate-x-1 inline-block">
+                    Безопасность
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium hover:translate-x-1 inline-block">
+                    FAQ
+                  </a>
+                </li>
               </ul>
             </div>
+            
+            {/* Продавцам */}
             <div>
-              <h3 className="font-bold mb-4 text-lg">Продавцам</h3>
-              <ul className="space-y-3 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Разместить объявление</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Тарифы</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Правила</a></li>
+              <h3 className="font-black text-lg mb-6 flex items-center gap-2">
+                <div className="w-1 h-6 bg-gradient-to-b from-primary to-blue-600 rounded-full"></div>
+                Продавцам
+              </h3>
+              <ul className="space-y-4">
+                <li>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium hover:translate-x-1 inline-block">
+                    Разместить объявление
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium hover:translate-x-1 inline-block">
+                    Тарифы
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium hover:translate-x-1 inline-block">
+                    Правила
+                  </a>
+                </li>
               </ul>
             </div>
+            
+            {/* Поддержка */}
             <div>
-              <h3 className="font-bold mb-4 text-lg">Поддержка</h3>
-              <ul className="space-y-3 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Контакты</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">О компании</a></li>
+              <h3 className="font-black text-lg mb-6 flex items-center gap-2">
+                <div className="w-1 h-6 bg-gradient-to-b from-primary to-blue-600 rounded-full"></div>
+                Поддержка
+              </h3>
+              <ul className="space-y-4">
+                <li>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium hover:translate-x-1 inline-block">
+                    Контакты
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium hover:translate-x-1 inline-block">
+                    О компании
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
-          <div className="border-t pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-muted-foreground">© 2024 Boat. Все права защищены.</p>
-            <div className="flex gap-6 text-sm text-muted-foreground">
-              <a href="#" className="hover:text-primary transition-colors">Политика конфиденциальности</a>
-              <a href="#" className="hover:text-primary transition-colors">Условия использования</a>
+          
+          {/* Bottom bar */}
+          <div className="relative pt-10 border-t border-border/40">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+              <div className="flex items-center gap-2 text-muted-foreground font-medium">
+                <span>© 2024 Boat.</span>
+                <span className="hidden md:inline">Все права защищены.</span>
+              </div>
+              <div className="flex flex-wrap justify-center gap-8 text-sm">
+                <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium">
+                  Политика конфиденциальности
+                </a>
+                <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium">
+                  Условия использования
+                </a>
+              </div>
             </div>
           </div>
+        </div>
+        
+        {/* Bottom wave decoration */}
+        <div className="absolute bottom-0 left-0 w-full opacity-[0.03]">
+          <svg className="w-full h-16" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,0 Q150,50 300,25 T600,25 T900,25 T1200,25 L1200,120 L0,120 Z" fill="currentColor" className="text-primary"/>
+          </svg>
         </div>
       </footer>
     </div>

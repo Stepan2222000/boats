@@ -10,16 +10,19 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-background/98 backdrop-blur-3xl border-b-2 border-border/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)] relative overflow-hidden">
+    <header className="sticky top-0 z-50 bg-background/99 backdrop-blur-3xl border-b border-border/40 shadow-[0_8px_32px_rgba(0,0,0,0.08)] relative overflow-hidden">
+      {/* Subtle gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/3 via-background to-blue-600/3"></div>
+      
       {/* Decorative wave pattern background */}
-      <div className="absolute inset-0 opacity-[0.03]">
-        <svg className="absolute bottom-0 w-full h-8" viewBox="0 0 1200 120" preserveAspectRatio="none">
+      <div className="absolute inset-0 opacity-[0.02]">
+        <svg className="absolute bottom-0 w-full h-6" viewBox="0 0 1200 120" preserveAspectRatio="none">
           <path d="M0,0 Q300,40 600,20 T1200,0 L1200,120 L0,120 Z" fill="currentColor" className="text-primary"/>
         </svg>
       </div>
       
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-blue-600/5"></div>
+      {/* Subtle top highlight */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
       
       <div className="relative max-w-7xl mx-auto px-4 py-5">
         <div className="flex items-center justify-between gap-4">
@@ -74,23 +77,23 @@ export default function Header() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className="hidden md:flex w-11 h-11 rounded-xl hover-elevate"
+              className="hidden md:flex w-11 h-11 rounded-xl hover-elevate relative group"
               data-testid="button-favorites"
             >
-              <Heart className="w-5 h-5" />
+              <Heart className="w-5 h-5 group-hover:fill-primary/20 transition-all" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="hidden md:flex w-11 h-11 rounded-xl hover-elevate relative"
+              className="hidden md:flex w-11 h-11 rounded-xl hover-elevate relative group"
               data-testid="button-messages"
             >
               <MessageCircle className="w-5 h-5" />
-              <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 text-xs bg-destructive border-2 border-background">3</Badge>
+              <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 text-[10px] font-black bg-gradient-to-br from-destructive to-red-600 border-2 border-background shadow-lg">3</Badge>
             </Button>
             <Button
               variant="default"
