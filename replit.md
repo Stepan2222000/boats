@@ -6,6 +6,15 @@ This is a boat marketplace application built with React, Express, and PostgreSQL
 
 ## Recent Changes
 
+**October 3, 2025** - Photo Upload Enhancements
+- **Uppy Modal Styling**: Custom maritime-themed CSS with blue gradients, smooth animations, styled progress bars, and rounded corners for professional appearance
+- **Sequential Upload**: Files now upload one at a time (limit: 1) for reliability and better user feedback
+- **Preview Display**: Photo previews now load correctly using presigned download URLs instead of direct paths
+- **Enhanced Preview UI**: Added loading spinners, numbered badges (1, 2, 3...), styled delete buttons with hover effects, and border styling
+- **API Endpoints**: Created POST /api/objects/download-url for fetching presigned URLs for photo previews
+- **Path Normalization**: Implemented uploadURL → normalizedPath mapping to ensure correct object paths for preview requests
+- **Parallel Loading**: Presigned URLs fetch in parallel for better performance
+
 **October 3, 2025** - UI/UX Improvements & Admin Panel
 - Fixed header search: Added form submission handlers for desktop/mobile, routes to /search?q=query on Enter
 - Redesigned search results: Compact, minimalistic layout with smaller paddings, reduced typography, and controls for immediate visibility of listings
