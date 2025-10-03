@@ -4,6 +4,15 @@
 
 This is a boat marketplace application built with React, Express, and PostgreSQL. The platform allows users to browse, search, and list boats for sale, with AI-powered listing generation using OpenAI. The application targets Russian-speaking users and takes design inspiration from successful marketplaces like Avito and Airbnb.
 
+## Recent Changes
+
+**October 3, 2025** - UI/UX Improvements & Admin Panel
+- Fixed header search: Added form submission handlers for desktop/mobile, routes to /search?q=query on Enter
+- Redesigned search results: Compact, minimalistic layout with smaller paddings, reduced typography, and controls for immediate visibility of listings
+- Enhanced AI prompts: Updated interpretSearchQuery to extract detailed features (size, cabin, etc.) not just basic parameters
+- Added admin panel: New /admin route with tabbed interface for managing AI model selection and custom prompts (includes database schema aiSettings table and API endpoints)
+- Redesigned boat cards: Taller image aspect ratio (3:4), prominent price display, blue title text, compact metadata row
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
