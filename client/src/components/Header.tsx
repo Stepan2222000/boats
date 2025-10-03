@@ -95,19 +95,21 @@ export default function Header() {
               <MessageCircle className="w-5 h-5" />
               <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 text-[10px] font-black bg-gradient-to-br from-destructive to-red-600 border-2 border-background shadow-lg">3</Badge>
             </Button>
-            <Button
-              variant="default"
-              size="lg"
-              className="hidden md:flex relative bg-gradient-to-r from-primary via-blue-600 to-primary shadow-2xl font-black rounded-xl px-8 h-12 overflow-hidden group bg-[length:200%_100%] hover:bg-[position:100%_0]"
-              data-testid="button-add-listing"
-            >
-              {/* Shimmer effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+            <Link href="/create">
+              <Button
+                variant="default"
+                size="lg"
+                className="hidden md:flex relative bg-gradient-to-r from-primary via-blue-600 to-primary shadow-2xl font-black rounded-xl px-8 h-12 overflow-hidden group bg-[length:200%_100%] hover:bg-[position:100%_0]"
+                data-testid="button-add-listing"
+              >
+                {/* Shimmer effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
               
-              <Plus className="w-5 h-5 mr-2 relative z-10 group-hover:rotate-90 transition-transform duration-300" />
-              <span className="relative z-10">Разместить</span>
-              <Sparkles className="w-4 h-4 ml-2 relative z-10 opacity-80 animate-pulse" />
-            </Button>
+                <Plus className="w-5 h-5 mr-2 relative z-10 group-hover:rotate-90 transition-transform duration-300" />
+                <span className="relative z-10">Разместить</span>
+                <Sparkles className="w-4 h-4 ml-2 relative z-10 opacity-80 animate-pulse" />
+              </Button>
+            </Link>
             <Button
               variant="ghost"
               size="icon"
