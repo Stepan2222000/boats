@@ -116,7 +116,7 @@ export default function CreateListingPage() {
       .filter((url): url is string => typeof url === 'string');
     
     if (newUrls.length > 0) {
-      const remainingSlots = 10 - photoUrls.length;
+      const remainingSlots = 30 - photoUrls.length;
       const urlsToAdd = newUrls.slice(0, remainingSlots);
       
       setPhotoUrls((prev) => [...prev, ...urlsToAdd]);
@@ -298,10 +298,10 @@ export default function CreateListingPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-base font-bold">Фотографии</h3>
-                      <p className="text-sm text-muted-foreground">Добавьте фото вашей лодки (до 10 фото)</p>
+                      <p className="text-sm text-muted-foreground">Добавьте фото вашей лодки (до 30 фото)</p>
                     </div>
                     <ObjectUploader
-                      maxNumberOfFiles={10}
+                      maxNumberOfFiles={30}
                       maxFileSize={10485760}
                       onGetUploadParameters={handleGetUploadParameters}
                       onComplete={handleUploadComplete}
