@@ -35,3 +35,19 @@ export const insertBoatSchema = createInsertSchema(boats).omit({
 
 export type InsertBoat = z.infer<typeof insertBoatSchema>;
 export type Boat = typeof boats.$inferSelect;
+
+export const aiSettings = pgTable("ai_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  settingKey: varchar("setting_key", { length: 100 }).notNull().unique(),
+  settingValue: text("setting_value").notNull(),
+  description: text("description"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertAiSettingSchema = createInsertSchema(aiSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertAiSetting = z.infer<typeof insertAiSettingSchema>;
+export type AiSetting = typeof aiSettings.$inferSelect;

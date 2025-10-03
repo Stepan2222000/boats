@@ -1,4 +1,4 @@
-import { type Boat, type InsertBoat, boats } from "@shared/schema";
+import { type Boat, type InsertBoat, boats, type AiSetting, aiSettings } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, or, ilike, sql } from "drizzle-orm";
 
@@ -16,6 +16,9 @@ export interface IStorage {
   createBoat(boat: InsertBoat): Promise<Boat>;
   updateBoat(id: string, boat: Partial<InsertBoat>): Promise<Boat | undefined>;
   deleteBoat(id: string): Promise<boolean>;
+  getAllAiSettings(): Promise<AiSetting[]>;
+  getAiSetting(key: string): Promise<AiSetting | undefined>;
+  upsertAiSetting(key: string, value: string, description?: string): Promise<AiSetting>;
 }
 
 export class DbStorage implements IStorage {
@@ -106,6 +109,34 @@ export class DbStorage implements IStorage {
   async deleteBoat(id: string): Promise<boolean> {
     const result = await db.delete(boats).where(eq(boats.id, id)).returning();
     return result.length > 0;
+  }
+
+  async getAllAiSettings(): Promise<AiSetting[]> {
+    return await db.select().from(aiSettings).orderBy(aiSettings.settingKey);
+  }
+
+  async getAiSetting(key: string): Promise<AiSetting | undefined> {
+    const result = await db.select().from(aiSettings).where(eq(aiSettings.settingKey, key)).limit(1);
+    return result[0];
+  }
+
+  async upsertAiSetting(key: string, value: string, description?: string): Promise<AiSetting> {
+    const existing = await this.getAiSetting(key);
+    
+    if (existing) {
+      const result = await db
+        .update(aiSettings)
+        .set({ settingValue: value, description, updatedAt: new Date() })
+        .where(eq(aiSettings.settingKey, key))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db
+        .insert(aiSettings)
+        .values({ settingKey: key, settingValue: value, description })
+        .returning();
+      return result[0];
+    }
   }
 }
 

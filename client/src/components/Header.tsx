@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Search, Heart, User, Menu, MessageCircle, Sparkles, Plus, Anchor, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,14 @@ import { useState } from "react";
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [, setLocation] = useLocation();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setLocation(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-background/99 backdrop-blur-3xl border-b border-border/40 shadow-[0_8px_32px_rgba(0,0,0,0.08)] relative overflow-hidden">
@@ -53,7 +61,7 @@ export default function Header() {
             </a>
           </Link>
 
-          <div className="hidden md:flex flex-1 max-w-2xl">
+          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-2xl">
             <div className="relative w-full group/search">
               {/* Search input glow */}
               <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-blue-600/20 rounded-xl blur-md opacity-0 group-focus-within/search:opacity-100 transition-opacity duration-300"></div>
@@ -65,17 +73,22 @@ export default function Header() {
                   placeholder="Поиск катеров и яхт..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
                   className="pl-12 pr-4 h-12 rounded-xl border-2 border-border/60 bg-background/60 backdrop-blur-sm focus-visible:border-primary/60 transition-all font-medium"
                   data-testid="input-search"
                 />
                 {searchQuery && (
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                    <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-                  </div>
+                  <button
+                    type="submit"
+                    className="absolute right-4 top-1/2 -translate-y-1/2"
+                    data-testid="button-search-submit"
+                  >
+                    <Sparkles className="w-5 h-5 text-primary animate-pulse hover-elevate cursor-pointer" />
+                  </button>
                 )}
               </div>
             </div>
-          </div>
+          </form>
 
           <div className="flex items-center gap-2">
             <Button
@@ -130,7 +143,7 @@ export default function Header() {
           </div>
         </div>
 
-        <div className="md:hidden mt-3">
+        <form onSubmit={handleSearch} className="md:hidden mt-3">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -138,11 +151,12 @@ export default function Header() {
               placeholder="Поиск катеров и яхт..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
               className="pl-10 w-full h-10 text-sm rounded-lg"
               data-testid="input-search-mobile"
             />
           </div>
-        </div>
+        </form>
 
         {isMenuOpen && (
           <div className="md:hidden mt-3 pb-2 border-t pt-3 space-y-2">

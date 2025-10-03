@@ -8,6 +8,7 @@ import CatalogPage from "@/pages/CatalogPage";
 import ListingPage from "@/pages/ListingPage";
 import CreateListingPage from "@/pages/CreateListingPage";
 import SearchResultsPage from "@/pages/SearchResultsPage";
+import AdminPage from "@/pages/AdminPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/listing/:id" component={ListingPage} />
       <Route path="/create" component={CreateListingPage} />
       <Route path="/search" component={SearchResultsPage} />
+      <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -193,6 +193,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/ai-settings", async (req, res) => {
+    try {
+      const settings = await storage.getAllAiSettings();
+      res.json(settings);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/admin/ai-settings", async (req, res) => {
+    try {
+      const updateSchema = z.object({
+        key: z.string().min(1),
+        value: z.string().min(1),
+        description: z.string().optional(),
+      });
+
+      const result = updateSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: fromZodError(result.error).message 
+        });
+      }
+
+      const setting = await storage.upsertAiSetting(
+        result.data.key, 
+        result.data.value, 
+        result.data.description
+      );
+      res.json(setting);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

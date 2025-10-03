@@ -73,23 +73,24 @@ export default function SearchResultsPage() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
+      <div className="max-w-7xl mx-auto px-4 py-3 md:py-4">
         <Button
           variant="ghost"
+          size="sm"
           onClick={() => window.history.back()}
-          className="mb-6 hover-elevate"
+          className="mb-2 hover-elevate"
           data-testid="button-back"
         >
-          <ArrowLeft className="w-4 h-4 mr-2" />
+          <ArrowLeft className="w-3 h-3 mr-1" />
           Назад
         </Button>
 
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-5xl font-black mb-4">
+        <div className="mb-3">
+          <h1 className="text-xl md:text-2xl font-bold mb-1">
             Результаты поиска
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground">
-            Ваш запрос: <span className="text-foreground font-bold">"{query}"</span>
+          <p className="text-sm md:text-base text-muted-foreground">
+            Ваш запрос: <span className="text-foreground font-semibold">"{query}"</span>
           </p>
         </div>
 
@@ -113,48 +114,42 @@ export default function SearchResultsPage() {
 
         {data && !isLoading && (
           <>
-            <Card className="mb-8 border-2 bg-gradient-to-br from-primary/5 to-blue-600/5 hover-elevate">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg mb-1">AI интерпретировал ваш запрос</h3>
-                    <p className="text-sm text-muted-foreground">Вот что мы поняли из вашего запроса:</p>
-                  </div>
+            <Card className="mb-4 border bg-gradient-to-br from-primary/5 to-blue-600/5">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <h3 className="font-semibold text-sm">AI интерпретировал запрос:</h3>
                 </div>
                 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {data.interpretedParams.query && (
-                    <Badge variant="secondary" className="text-base font-bold px-4 py-2">
-                      <Info className="w-4 h-4 mr-2" />
-                      Поиск: {data.interpretedParams.query}
+                    <Badge variant="secondary" className="text-xs font-semibold px-2 py-1">
+                      {data.interpretedParams.query}
                     </Badge>
                   )}
                   {data.interpretedParams.boatType && (
-                    <Badge variant="secondary" className="text-base font-bold px-4 py-2">
+                    <Badge variant="secondary" className="text-xs font-semibold px-2 py-1">
                       Тип: {data.interpretedParams.boatType}
                     </Badge>
                   )}
                   {data.interpretedParams.minPrice && (
-                    <Badge variant="secondary" className="text-base font-bold px-4 py-2">
+                    <Badge variant="secondary" className="text-xs font-semibold px-2 py-1">
                       От: {formatPrice(data.interpretedParams.minPrice)}
                     </Badge>
                   )}
                   {data.interpretedParams.maxPrice && (
-                    <Badge variant="secondary" className="text-base font-bold px-4 py-2">
+                    <Badge variant="secondary" className="text-xs font-semibold px-2 py-1">
                       До: {formatPrice(data.interpretedParams.maxPrice)}
                     </Badge>
                   )}
                   {data.interpretedParams.year && (
-                    <Badge variant="secondary" className="text-base font-bold px-4 py-2">
+                    <Badge variant="secondary" className="text-xs font-semibold px-2 py-1">
                       Год: {data.interpretedParams.year}
                     </Badge>
                   )}
                   {data.interpretedParams.location && (
-                    <Badge variant="secondary" className="text-base font-bold px-4 py-2 flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
+                    <Badge variant="secondary" className="text-xs font-semibold px-2 py-1 inline-flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
                       {data.interpretedParams.location}
                     </Badge>
                   )}
@@ -162,14 +157,14 @@ export default function SearchResultsPage() {
               </CardContent>
             </Card>
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-black">
+            <div className="mb-3">
+              <h2 className="text-base md:text-lg font-semibold">
                 Найдено объявлений: <span className="text-primary">{data.boats.length}</span>
               </h2>
             </div>
 
             {data.boats.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 {data.boats.map((boat: Boat) => (
                   <BoatCard
                     key={boat.id}
