@@ -9,15 +9,15 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-background border-b">
-      <div className="max-w-7xl mx-auto px-4 py-3">
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between gap-4">
           <Link href="/">
             <a className="flex items-center gap-2" data-testid="link-home">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary text-primary-foreground font-bold text-xl">
+              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-blue-600 text-primary-foreground font-bold text-2xl shadow-lg">
                 B
               </div>
-              <span className="font-semibold text-xl hidden sm:inline">Boat</span>
+              <span className="font-bold text-2xl hidden sm:inline bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Boat</span>
             </a>
           </Link>
 
