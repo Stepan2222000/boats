@@ -39,6 +39,29 @@ This is a boat marketplace application built with React, Express, and PostgreSQL
 - Redesigned boat cards: **Horizontal layout** with image on left (fixed width 192-256px), content on right. Prominent price, blue title, compact metadata. Search results display cards in vertical stack for maximum photo visibility
 - Added admin access button: Small semi-transparent Settings icon button in footer with prompt-based authentication (login: root, password: root)
 
+**October 3, 2025** - Listing Management & View Tracking
+- **View Tracking System**: Implemented automatic view counting for boat listings
+  - Database fields: viewCount (integer) and viewHistory (jsonb array with userId + timestamp)
+  - POST /api/boats/:id/view endpoint records each view (anonymous or authenticated)
+  - ListingPage automatically registers views on mount
+  - View statistics displayed to listing owners on ListingPage
+- **Edit Functionality**: Full listing editing capabilities for owners
+  - New EditListingPage at /edit/:id route with pre-filled form
+  - PUT /api/boats/:id endpoint with owner verification
+  - Only listing owners can see "Изменить" button on ListingPage
+  - Redirects non-owners attempting to access edit page
+  - Cache invalidation for both collection and individual listing
+- **Delete Functionality**: Owners can delete their listings
+  - DELETE /api/boats/:id endpoint with owner verification
+  - Delete button visible only to listing owners
+  - Proper cache cleanup after deletion
+- **Admin Listings Management**: New "Объявления" tab in admin panel
+  - View all listings with statistics (total listings, views, average price)
+  - Each listing shows: title, description, price, year, location, type, view count, promoted status
+  - Quick access buttons: "Просмотр" to view listing, "Изменить" to edit (admin can edit any listing)
+  - Horizontal card layout with badges for metadata
+- **Security**: All edit/delete operations verify user ownership before allowing modifications
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -87,6 +110,9 @@ Preferred communication style: Simple, everyday language.
   - `GET /api/boats/:id` - Get single boat details
   - `POST /api/boats/ai-create` - AI-powered listing creation (requires authentication)
   - `POST /api/boats` - Create boat listing (requires authentication)
+  - `PUT /api/boats/:id` - Update boat listing (requires authentication + ownership)
+  - `DELETE /api/boats/:id` - Delete boat listing (requires authentication + ownership)
+  - `POST /api/boats/:id/view` - Record view (anonymous or authenticated)
 - JSON request/response format with Zod validation
 
 **Data Validation**
