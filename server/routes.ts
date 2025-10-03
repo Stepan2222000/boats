@@ -35,13 +35,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user: {
           id: user.id,
           phone: user.phone,
-          firstName: user.firstName,
-          lastName: user.lastName,
+          createdAt: user.createdAt,
         }
       });
     } catch (error: any) {
       console.error("Registration error:", error);
-      res.status(400).json({ message: error.message });
+      
+      if (error.message.includes('duplicate') || error.message.includes('уже существует')) {
+        return res.status(409).json({ message: "Пользователь с таким номером телефона уже существует" });
+      }
+      
+      res.status(400).json({ message: "Ошибка при регистрации" });
     }
   });
 
@@ -62,13 +66,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user: {
           id: user.id,
           phone: user.phone,
-          firstName: user.firstName,
-          lastName: user.lastName,
+          createdAt: user.createdAt,
         }
       });
     } catch (error: any) {
       console.error("Login error:", error);
-      res.status(401).json({ message: error.message });
+      res.status(401).json({ message: "Неверный номер телефона или пароль" });
     }
   });
 
@@ -98,8 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user: {
           id: user.id,
           phone: user.phone,
-          firstName: user.firstName,
-          lastName: user.lastName,
+          createdAt: user.createdAt,
         }
       });
     } catch (error) {
@@ -387,6 +389,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Boat not found" });
       }
       res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

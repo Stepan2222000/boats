@@ -1,11 +1,12 @@
-import { type Boat, type InsertBoat, boats, type AiSetting, aiSettings, type User, users } from "@shared/schema";
+import { type Boat, type InsertBoat, boats, type AiSetting, aiSettings, type User, type PublicUser, users } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, or, ilike, sql } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
+  getUser(id: string): Promise<PublicUser | undefined>;
   getUserByPhone(phone: string): Promise<User | undefined>;
-  createUser(user: { phone: string; passwordHash: string }): Promise<User>;
+  createUser(user: { phone: string; passwordHash: string }): Promise<PublicUser>;
+  getAllUsers(): Promise<PublicUser[]>;
   getBoat(id: string): Promise<Boat | undefined>;
   getAllBoats(): Promise<Boat[]>;
   searchBoats(params: {
@@ -26,9 +27,11 @@ export interface IStorage {
 }
 
 export class DbStorage implements IStorage {
-  async getUser(id: string): Promise<User | undefined> {
+  async getUser(id: string): Promise<PublicUser | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    if (!user) return undefined;
+    const { passwordHash, ...publicUser } = user;
+    return publicUser;
   }
 
   async getUserByPhone(phone: string): Promise<User | undefined> {
@@ -36,7 +39,7 @@ export class DbStorage implements IStorage {
     return user;
   }
 
-  async createUser(userData: { phone: string; passwordHash: string }): Promise<User> {
+  async createUser(userData: { phone: string; passwordHash: string }): Promise<PublicUser> {
     const [user] = await db
       .insert(users)
       .values({
@@ -44,9 +47,14 @@ export class DbStorage implements IStorage {
         passwordHash: userData.passwordHash,
       })
       .returning();
-    return user;
+    const { passwordHash, ...publicUser } = user;
+    return publicUser;
   }
 
+  async getAllUsers(): Promise<PublicUser[]> {
+    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+    return allUsers.map(({ passwordHash, ...publicUser }) => publicUser);
+  }
 
   async getBoat(id: string): Promise<Boat | undefined> {
     const result = await db.select().from(boats).where(eq(boats.id, id)).limit(1);

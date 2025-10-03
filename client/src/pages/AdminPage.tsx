@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Sparkles, Save, RefreshCw, Package, Edit, Trash2, Eye } from "lucide-react";
+import { Settings, Sparkles, Save, RefreshCw, Package, Edit, Trash2, Eye, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { AiSetting, Boat } from "@shared/schema";
+import type { AiSetting, Boat, PublicUser } from "@shared/schema";
 
 const DEFAULT_SETTINGS = {
   listingModel: "gpt-4o-mini",
@@ -45,6 +45,10 @@ export default function AdminPage() {
 
   const { data: boats, isLoading: boatsLoading } = useQuery<Boat[]>({
     queryKey: ['/api/boats'],
+  });
+
+  const { data: users, isLoading: usersLoading } = useQuery<PublicUser[]>({
+    queryKey: ['/api/admin/users'],
   });
 
   const updateMutation = useMutation({
@@ -114,6 +118,10 @@ export default function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="prompts" data-testid="tab-prompts">
               Промпты
+            </TabsTrigger>
+            <TabsTrigger value="users" data-testid="tab-users">
+              <Users className="w-4 h-4 mr-2" />
+              Пользователи
             </TabsTrigger>
             <TabsTrigger value="listings" data-testid="tab-listings">
               <Package className="w-4 h-4 mr-2" />
@@ -349,6 +357,84 @@ export default function AdminPage() {
                     >
                       Изменить
                     </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Пользователи системы</CardTitle>
+                <CardDescription>
+                  Все зарегистрированные пользователи
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {usersLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Всего пользователей</p>
+                        <p className="text-2xl font-bold">{users?.length || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Новых за сегодня</p>
+                        <p className="text-2xl font-bold">
+                          {users?.filter(u => {
+                            const createdDate = new Date(u.createdAt!);
+                            const today = new Date();
+                            return createdDate.toDateString() === today.toDateString();
+                          }).length || 0}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      {users?.map((user) => (
+                        <Card key={user.id} className="hover-elevate">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <Users className="w-5 h-5 text-primary" />
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold">{user.phone}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      ID: {user.id}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs text-muted-foreground">
+                                  Зарегистрирован
+                                </p>
+                                <p className="text-sm font-medium">
+                                  {new Date(user.createdAt!).toLocaleDateString('ru-RU', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {users && users.length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          Пока нет зарегистрированных пользователей
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </CardContent>

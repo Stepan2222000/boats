@@ -6,21 +6,26 @@ This is a boat marketplace application built with React, Express, and PostgreSQL
 
 ## Recent Changes
 
-**October 3, 2025** - User Authentication & Profile Management
-- **Replit Auth Integration**: Implemented OpenID Connect authentication flow using Replit Auth
-- **Database Schema**: Added users table (id, email, firstName, lastName, profileImageUrl) and sessions table for session storage
-- **User-Boat Relationship**: Added userId field to boats table to link listings to their owners
-- **Authentication Middleware**: Created isAuthenticated middleware for protected routes
-- **useAuth Hook**: Client-side React hook for accessing current user state and authentication status
-- **Profile Page**: New /profile route displaying user information (name, email, avatar, member since date)
-- **Protected Routes**: CreateListingPage now requires authentication, redirects to login if not authenticated
-- **Header Updates**: Dynamic login/logout buttons, user avatar dropdown with profile and logout options
-- **Auth Routes**: 
-  - GET /api/auth/user - Returns authentication state and user data
-  - GET /api/login - Initiates OIDC login flow
-  - GET /api/logout - Logs out user and clears session
-  - GET /api/callback - OIDC callback handler
-- **Listing Creation**: Boat listings now automatically linked to authenticated user's ID
+**October 4, 2025** - Phone Number Authentication System with Production-Grade Security
+- **Custom Authentication**: Replaced Replit Auth with phone number + password authentication using bcrypt for secure password hashing
+- **Database Schema**: Updated users table (id, phone unique, passwordHash, createdAt, updatedAt) - removed email, firstName, lastName fields
+- **Session Management**: PostgreSQL-backed sessions with userId stored in session data
+- **Security Architecture**:
+  - Created PublicUser type (Omit<User, 'passwordHash'>) to prevent password hash leakage
+  - Storage layer returns only PublicUser for all public-facing methods
+  - TypeScript compile-time protection against accidental password exposure
+  - Frontend strongly typed with PublicUser[] - no 'any' types
+- **Modern AI-Style UI**: Completely redesigned registration and login pages with dark gradient backgrounds (slate-950/blue-950/indigo-950), glowing effects, grid patterns, and floating particle animations
+- **Auth Routes**:
+  - POST /api/register - Create new user, returns PublicUser (409 for duplicates, 400 for validation)
+  - POST /api/login - Authenticate user, returns PublicUser (401 with safe error message)
+  - POST /api/logout - Destroy session
+  - GET /api/auth/user - Get current user state (PublicUser)
+  - GET /api/admin/users - Admin endpoint returns PublicUser[] (no password hashes)
+- **Error Handling**: Normalized HTTP status codes and user-friendly messages without implementation details
+- **Header Updates**: Login/Register buttons when not authenticated, user avatar dropdown with phone number when authenticated
+- **Admin Panel**: New "Пользователи" tab showing all registered users with phone numbers, IDs, and registration dates (strongly typed, secure)
+- **Protected Routes**: CreateListingPage requires authentication, listings linked to user phone accounts
 
 **October 3, 2025** - Photo Upload Enhancements
 - **Uppy Modal Styling**: Custom maritime-themed CSS with blue gradients, smooth animations, styled progress bars, and rounded corners for professional appearance
