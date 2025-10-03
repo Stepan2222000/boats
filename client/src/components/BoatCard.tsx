@@ -47,18 +47,19 @@ export default function BoatCard({
 
   return (
     <Card
-      className="group relative overflow-visible cursor-pointer transition-all duration-500"
+      className="group relative overflow-visible cursor-pointer transition-all duration-700"
       onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       data-testid={`card-boat-${id}`}
       style={{
-        transform: isHovered ? 'translateY(-8px) rotateX(2deg)' : 'translateY(0) rotateX(0)',
-        transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+        transform: isHovered ? 'translateY(-12px) rotateX(3deg) scale(1.02)' : 'translateY(0) rotateX(0) scale(1)',
+        transition: 'all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)'
       }}
     >
-      {/* Glow effect on hover */}
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/0 via-blue-600/0 to-primary/0 group-hover:from-primary/30 group-hover:via-blue-600/30 group-hover:to-primary/30 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500 -z-10"></div>
+      {/* Multi-layer glow effects on hover */}
+      <div className="absolute -inset-1 bg-gradient-to-r from-primary/0 via-blue-600/0 to-primary/0 group-hover:from-primary/40 group-hover:via-blue-600/40 group-hover:to-primary/40 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 -z-10"></div>
+      <div className="absolute -inset-0.5 bg-gradient-to-br from-primary/0 to-blue-600/0 group-hover:from-primary/20 group-hover:to-blue-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500 -z-10"></div>
       
       <div className="relative overflow-hidden rounded-t-2xl">
         <div className="relative aspect-[4/3] bg-muted overflow-hidden">
@@ -111,39 +112,50 @@ export default function BoatCard({
         </div>
       </div>
 
-      <CardContent className="p-6 bg-background border-2 border-t-0 border-border/50 group-hover:border-primary/30 transition-all duration-500 rounded-b-2xl">
-        <div className="mb-4">
-          <p className="text-3xl md:text-4xl font-black bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent tracking-tight">
-            {price.toLocaleString("ru-RU")} {currency}
-          </p>
-        </div>
-
-        <h3 className="text-lg font-bold text-foreground mb-5 line-clamp-2 min-h-[3.5rem] leading-snug group-hover:text-primary transition-colors">
-          {title}
-        </h3>
-
-        <div className="flex flex-wrap gap-5 text-base text-muted-foreground mb-5">
-          {year && (
-            <div className="flex items-center gap-2 group/item">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover/item:bg-primary/20 transition-colors">
-                <Calendar className="w-4 h-4 text-primary" />
-              </div>
-              <span className="font-semibold">{year}</span>
+      <CardContent className="relative p-7 bg-background border-2 border-t-0 border-border/60 group-hover:border-primary/40 transition-all duration-700 rounded-b-2xl overflow-hidden">
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-blue-600/0 group-hover:from-primary/5 group-hover:to-blue-600/5 transition-opacity duration-700"></div>
+        
+        <div className="relative">
+          <div className="mb-5">
+            <div className="relative inline-block">
+              <p className="text-3xl md:text-4xl font-black bg-gradient-to-r from-foreground via-foreground/95 to-foreground/70 bg-clip-text text-transparent tracking-tight">
+                {price.toLocaleString("ru-RU")} {currency}
+              </p>
+              {/* Decorative underline */}
+              <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-blue-600 group-hover:w-full transition-all duration-500"></div>
             </div>
-          )}
-          {length && (
-            <div className="flex items-center gap-2 group/item">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover/item:bg-primary/20 transition-colors">
-                <Ruler className="w-4 h-4 text-primary" />
-              </div>
-              <span className="font-semibold">{length} м</span>
-            </div>
-          )}
-        </div>
+          </div>
 
-        <div className="flex items-center gap-2 text-base text-muted-foreground pt-5 border-t border-border/50">
-          <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
-          <span className="truncate font-semibold">{location}</span>
+          <h3 className="text-lg font-black text-foreground mb-6 line-clamp-2 min-h-[3.5rem] leading-tight group-hover:text-primary transition-colors duration-300">
+            {title}
+          </h3>
+
+          <div className="flex flex-wrap gap-6 text-base text-muted-foreground mb-6">
+            {year && (
+              <div className="flex items-center gap-2.5 group/item">
+                <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-primary/15 to-blue-600/10 flex items-center justify-center group-hover/item:from-primary/25 group-hover/item:to-blue-600/20 transition-all duration-300 group-hover/item:scale-110">
+                  <Calendar className="w-4.5 h-4.5 text-primary relative z-10" />
+                  <div className="absolute inset-0 bg-primary/20 rounded-xl blur opacity-0 group-hover/item:opacity-100 transition-opacity"></div>
+                </div>
+                <span className="font-bold group-hover/item:text-foreground transition-colors">{year}</span>
+              </div>
+            )}
+            {length && (
+              <div className="flex items-center gap-2.5 group/item">
+                <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-primary/15 to-blue-600/10 flex items-center justify-center group-hover/item:from-primary/25 group-hover/item:to-blue-600/20 transition-all duration-300 group-hover/item:scale-110">
+                  <Ruler className="w-4.5 h-4.5 text-primary relative z-10" />
+                  <div className="absolute inset-0 bg-primary/20 rounded-xl blur opacity-0 group-hover/item:opacity-100 transition-opacity"></div>
+                </div>
+                <span className="font-bold group-hover/item:text-foreground transition-colors">{length} м</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2.5 text-base text-muted-foreground pt-6 border-t border-border/60 group-hover:border-primary/30 transition-colors">
+            <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
+            <span className="truncate font-bold">{location}</span>
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -54,83 +54,146 @@ export default function HeroSearch() {
 
   return (
     <div className="relative min-h-[95vh] flex items-center overflow-hidden bg-gradient-to-br from-primary/5 via-background to-blue-500/5">
-      {/* Advanced multi-layer animated background */}
+      {/* Ultra-advanced multi-layer animated background */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Primary gradient orbs */}
-        <div className="absolute -top-1/2 -right-1/4 w-[1000px] h-[1000px] bg-gradient-to-br from-primary/15 to-blue-600/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/4 -left-1/4 w-[900px] h-[900px] bg-gradient-to-tl from-blue-400/15 to-primary/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute bottom-0 right-1/4 w-[800px] h-[800px] bg-gradient-to-tr from-primary/10 to-blue-500/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-bl from-blue-600/10 to-primary/15 rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }}></div>
+        {/* Primary gradient orbs with enhanced effects */}
+        <div className="absolute -top-1/2 -right-1/4 w-[1200px] h-[1200px] bg-gradient-to-br from-primary/20 via-blue-600/15 to-transparent rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/4 -left-1/4 w-[1100px] h-[1100px] bg-gradient-to-tl from-blue-400/20 via-primary/15 to-transparent rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute bottom-0 right-1/4 w-[1000px] h-[1000px] bg-gradient-to-tr from-primary/15 via-blue-500/20 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] bg-gradient-to-bl from-blue-600/15 via-primary/20 to-transparent rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }}></div>
         
         {/* Secondary accent orbs */}
-        <div className="absolute top-1/3 left-1/3 w-[400px] h-[400px] bg-gradient-to-r from-blue-500/5 to-transparent rounded-full blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-        <div className="absolute bottom-1/3 right-1/3 w-[350px] h-[350px] bg-gradient-to-l from-primary/5 to-transparent rounded-full blur-2xl animate-pulse" style={{ animationDelay: '2.5s' }}></div>
+        <div className="absolute top-1/3 left-1/3 w-[500px] h-[500px] bg-gradient-to-r from-blue-500/8 to-transparent rounded-full blur-2xl animate-scale-pulse" style={{ animationDelay: '0.5s' }}></div>
+        <div className="absolute bottom-1/3 right-1/3 w-[450px] h-[450px] bg-gradient-to-l from-primary/8 to-transparent rounded-full blur-2xl animate-scale-pulse" style={{ animationDelay: '2.5s' }}></div>
+        
+        {/* Particle-like decorative elements */}
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary/40 rounded-full blur-sm animate-particle-float"></div>
+        <div className="absolute top-1/3 right-1/3 w-3 h-3 bg-blue-600/40 rounded-full blur-sm animate-particle-float" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-primary/40 rounded-full blur-sm animate-particle-float" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-1/3 right-1/4 w-3 h-3 bg-blue-500/40 rounded-full blur-sm animate-particle-float" style={{ animationDelay: '3s' }}></div>
+        <div className="absolute top-2/3 left-2/3 w-2 h-2 bg-primary/40 rounded-full blur-sm animate-particle-float" style={{ animationDelay: '4s' }}></div>
       </div>
 
       {/* Premium grid pattern with gradient */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{ 
+      <div className="absolute inset-0 opacity-[0.04]" style={{ 
         backgroundImage: 'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
         backgroundSize: '60px 60px'
       }}></div>
       
       {/* Radial gradient overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-radial from-transparent via-background/5 to-background/20"></div>
+      <div className="absolute inset-0 bg-gradient-radial from-transparent via-background/5 to-background/30"></div>
+      
+      {/* Decorative light rays */}
+      <div className="absolute inset-0 opacity-[0.02]">
+        <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-primary/50 to-transparent"></div>
+        <div className="absolute top-0 left-1/2 w-px h-full bg-gradient-to-b from-transparent via-blue-600/50 to-transparent"></div>
+        <div className="absolute top-0 left-3/4 w-px h-full bg-gradient-to-b from-transparent via-primary/50 to-transparent"></div>
+      </div>
 
       <div className="relative w-full max-w-7xl mx-auto px-4 py-16 md:py-24">
         <div className="max-w-5xl mx-auto text-center">
-          {/* Ultra-premium AI Badge with animated shimmer */}
-          <div className="relative inline-block mb-10">
+          {/* Ultra-premium AI Badge with multiple animation layers */}
+          <div className="relative inline-block mb-12 group/badge">
+            {/* Outer rotating ring */}
+            <div className="absolute -inset-4 opacity-0 group-hover/badge:opacity-100 transition-opacity duration-500">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary via-blue-600 to-primary blur-xl animate-rotate-slow"></div>
+            </div>
+            
+            {/* Pulsing glow */}
             <div className="absolute -inset-2 bg-gradient-to-r from-primary via-blue-600 to-primary rounded-full blur-xl opacity-60 animate-glow"></div>
-            <Badge className="relative bg-gradient-to-r from-primary via-blue-600 to-primary text-primary-foreground px-8 py-4 text-lg font-bold border-0 shadow-2xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
-              <Sparkles className="w-6 h-6 mr-3 inline animate-pulse relative z-10" />
-              <span className="relative z-10">Интеллектуальный поиск нового поколения</span>
+            
+            {/* Badge content */}
+            <Badge className="relative bg-gradient-to-r from-primary via-blue-600 to-primary text-primary-foreground px-10 py-5 text-xl font-black border-0 shadow-2xl overflow-hidden rounded-full">
+              {/* Shimmer overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+              
+              {/* Sparkle icon with enhanced animation */}
+              <div className="relative z-10 inline-flex items-center gap-3">
+                <div className="relative">
+                  <Sparkles className="w-7 h-7 animate-pulse" />
+                  <div className="absolute inset-0 bg-white/50 blur-md rounded-full animate-ping"></div>
+                </div>
+                <span className="tracking-wide">Интеллектуальный поиск нового поколения</span>
+              </div>
             </Badge>
           </div>
 
-          <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-10 leading-[0.9] tracking-tight">
-            <span className="inline-block bg-gradient-to-br from-foreground via-foreground/90 to-foreground/60 bg-clip-text text-transparent relative">
-              Найдите свой
-              <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-primary/50 to-transparent rounded-full"></div>
+          {/* Epic hero title with advanced effects */}
+          <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-12 leading-[0.9] tracking-tight">
+            <span className="inline-block relative">
+              <span className="bg-gradient-to-br from-foreground via-foreground/90 to-foreground/60 bg-clip-text text-transparent">
+                Найдите свой
+              </span>
+              {/* Decorative underline with animation */}
+              <div className="absolute -bottom-3 left-0 right-0 h-1.5 bg-gradient-to-r from-primary/60 via-blue-600/60 to-transparent rounded-full opacity-70"></div>
+              <div className="absolute -bottom-3 left-0 w-0 h-1.5 bg-gradient-to-r from-primary to-blue-600 rounded-full animate-[slideRight_2s_ease-in-out_infinite]"></div>
             </span>
             <br />
-            <span className="inline-block bg-gradient-to-r from-primary via-blue-600 to-primary bg-clip-text text-transparent bg-[length:200%_100%] animate-shimmer relative">
-              катер мечты
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary/10 via-blue-600/10 to-primary/10 rounded-3xl blur-2xl -z-10 opacity-50"></div>
+            <span className="inline-block relative mt-4">
+              {/* Multi-layer glow effect */}
+              <div className="absolute -inset-6 bg-gradient-to-r from-primary/20 via-blue-600/20 to-primary/20 rounded-3xl blur-3xl opacity-60 animate-pulse"></div>
+              <div className="absolute -inset-4 bg-gradient-to-r from-primary/15 via-blue-600/15 to-primary/15 rounded-3xl blur-2xl opacity-80 animate-glow"></div>
+              
+              {/* Animated gradient text */}
+              <span className="relative bg-gradient-to-r from-primary via-blue-600 via-primary to-blue-600 bg-clip-text text-transparent animate-gradient-shift">
+                катер мечты
+              </span>
+              
+              {/* Sparkle decorations */}
+              <Sparkles className="absolute -top-4 -right-4 w-8 h-8 text-primary/60 animate-pulse" />
+              <Sparkles className="absolute -bottom-4 -left-4 w-6 h-6 text-blue-600/60 animate-pulse" style={{ animationDelay: '1s' }} />
             </span>
           </h1>
           
-          <p className="text-xl md:text-3xl text-muted-foreground mb-6 max-w-4xl mx-auto leading-relaxed font-medium">
-            Крупнейшая международная платформа водной техники
+          <p className="text-2xl md:text-4xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed font-semibold">
+            <span className="text-foreground">Крупнейшая</span> международная платформа водной техники
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-6 mb-16 text-base md:text-lg text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Globe className="w-5 h-5 text-primary" />
-              <span className="font-medium">Россия и СНГ</span>
+          {/* Premium trust badges */}
+          <div className="flex flex-wrap items-center justify-center gap-8 mb-20 text-lg md:text-xl">
+            <div className="group flex items-center gap-3 px-6 py-3 rounded-2xl bg-background/40 backdrop-blur-sm border border-border/40 hover:border-primary/40 transition-all duration-300 hover-elevate">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-blue-600/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Globe className="w-5 h-5 text-primary" />
+              </div>
+              <span className="font-bold text-foreground">Россия и СНГ</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-primary" />
-              <span className="font-medium">Verified Dealers</span>
+            <div className="group flex items-center gap-3 px-6 py-3 rounded-2xl bg-background/40 backdrop-blur-sm border border-border/40 hover:border-primary/40 transition-all duration-300 hover-elevate">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-blue-600/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Award className="w-5 h-5 text-primary" />
+              </div>
+              <span className="font-bold text-foreground">Verified Dealers</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-primary" />
-              <span className="font-medium">Защита сделок</span>
+            <div className="group flex items-center gap-3 px-6 py-3 rounded-2xl bg-background/40 backdrop-blur-sm border border-border/40 hover:border-primary/40 transition-all duration-300 hover-elevate">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-blue-600/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Shield className="w-5 h-5 text-primary" />
+              </div>
+              <span className="font-bold text-foreground">Защита сделок</span>
             </div>
           </div>
 
-          {/* Ultra-premium glassmorphic search box */}
+          {/* Epic glassmorphic search command center */}
           <div className="relative group/search">
-            {/* Outer glow */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-blue-600/20 to-primary/20 rounded-[2rem] blur-2xl opacity-0 group-hover/search:opacity-100 transition-all duration-500"></div>
+            {/* Multi-layer outer glow */}
+            <div className="absolute -inset-2 bg-gradient-to-r from-primary/30 via-blue-600/30 to-primary/30 rounded-[2.5rem] blur-3xl opacity-0 group-hover/search:opacity-100 transition-all duration-700 animate-pulse"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-blue-600/20 to-primary/20 rounded-[2.25rem] blur-2xl opacity-60 group-hover/search:opacity-100 transition-all duration-500"></div>
             
-            <div className="relative bg-background/95 backdrop-blur-2xl rounded-[2rem] shadow-[0_20px_70px_rgba(0,0,0,0.2)] p-10 md:p-12 border-2 border-border/40 hover:border-primary/40 transition-all duration-500 overflow-hidden">
-              {/* Inner shine effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent rounded-[2rem]"></div>
+            <div className="relative bg-background/98 backdrop-blur-3xl rounded-[2rem] shadow-[0_30px_90px_rgba(0,0,0,0.25)] p-12 md:p-16 border-2 border-border/50 hover:border-primary/50 transition-all duration-500 overflow-hidden">
+              {/* Animated gradient background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-blue-600/5 to-transparent opacity-0 group-hover/search:opacity-100 transition-opacity duration-700"></div>
               
-              {/* Decorative corner accents */}
-              <div className="absolute top-0 left-0 w-24 h-24 bg-gradient-to-br from-primary/10 to-transparent rounded-tl-[2rem]"></div>
-              <div className="absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-tl from-blue-600/10 to-transparent rounded-br-[2rem]"></div>
+              {/* Inner shine effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent rounded-[2rem]"></div>
+              
+              {/* Enhanced decorative corner accents */}
+              <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent rounded-tl-[2rem]"></div>
+              <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-tl from-blue-600/15 via-blue-600/5 to-transparent rounded-br-[2rem]"></div>
+              
+              {/* Decorative dots pattern */}
+              <div className="absolute top-8 right-8 flex gap-2 opacity-20">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+              </div>
               
               <div className="relative flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1 group">
@@ -191,54 +254,74 @@ export default function HeroSearch() {
             </div>
           </div>
 
-          {/* Premium animated stats with glassmorphic cards */}
-          <div className="grid grid-cols-3 gap-8 mt-28 max-w-5xl mx-auto">
+          {/* Epic animated stats with premium glassmorphic cards */}
+          <div className="grid grid-cols-3 gap-10 mt-32 max-w-6xl mx-auto">
             <div className="relative group">
-              {/* Card glow */}
-              <div className="absolute -inset-1 bg-gradient-to-br from-primary/20 to-blue-600/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+              {/* Multi-layer glow effects */}
+              <div className="absolute -inset-2 bg-gradient-to-br from-primary/30 to-blue-600/30 rounded-[2rem] blur-3xl opacity-0 group-hover:opacity-100 transition-all duration-700 animate-pulse"></div>
+              <div className="absolute -inset-1 bg-gradient-to-br from-primary/20 to-blue-600/20 rounded-[1.75rem] blur-2xl opacity-60 group-hover:opacity-100 transition-all duration-500"></div>
               
-              <div className="relative bg-background/40 backdrop-blur-xl border-2 border-border/40 rounded-3xl p-8 group-hover:border-primary/40 transition-all duration-500 overflow-hidden">
-                {/* Inner gradient */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative bg-background/50 backdrop-blur-2xl border-2 border-border/50 rounded-[1.5rem] p-10 group-hover:border-primary/60 transition-all duration-500 overflow-hidden group-hover:scale-105">
+                {/* Animated gradient backgrounds */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-blue-600/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                <div className="absolute inset-0 bg-gradient-to-tl from-primary/5 to-transparent opacity-100"></div>
+                
+                {/* Decorative corner elements */}
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-primary/10 to-transparent rounded-br-[1.5rem]"></div>
                 
                 <div className="relative text-center">
-                  <div className="text-6xl md:text-8xl font-black bg-gradient-to-br from-foreground via-foreground/90 to-foreground/60 bg-clip-text text-transparent mb-4 tabular-nums leading-none">
+                  <div className="text-7xl md:text-8xl font-black bg-gradient-to-br from-foreground via-foreground/95 to-foreground/60 bg-clip-text text-transparent mb-5 tabular-nums leading-none group-hover:scale-110 transition-transform duration-500">
                     {statsAnimated ? `${listingCount.toLocaleString('ru-RU')}+` : '0'}
                   </div>
-                  <div className="w-16 h-1 bg-gradient-to-r from-primary to-blue-600 rounded-full mx-auto mb-4"></div>
-                  <div className="text-lg text-muted-foreground font-bold uppercase tracking-[0.2em]">Объявлений</div>
+                  <div className="relative mb-5">
+                    <div className="h-1.5 w-20 bg-gradient-to-r from-primary to-blue-600 rounded-full mx-auto group-hover:w-32 transition-all duration-500"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary to-blue-600 rounded-full blur-lg opacity-50"></div>
+                  </div>
+                  <div className="text-xl text-muted-foreground font-black uppercase tracking-[0.25em]">Объявлений</div>
                 </div>
               </div>
             </div>
 
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-br from-blue-600/20 to-primary/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+              <div className="absolute -inset-2 bg-gradient-to-br from-blue-600/30 to-primary/30 rounded-[2rem] blur-3xl opacity-0 group-hover:opacity-100 transition-all duration-700 animate-pulse"></div>
+              <div className="absolute -inset-1 bg-gradient-to-br from-blue-600/20 to-primary/20 rounded-[1.75rem] blur-2xl opacity-60 group-hover:opacity-100 transition-all duration-500"></div>
               
-              <div className="relative bg-background/40 backdrop-blur-xl border-2 border-border/40 rounded-3xl p-8 group-hover:border-blue-600/40 transition-all duration-500 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative bg-background/50 backdrop-blur-2xl border-2 border-border/50 rounded-[1.5rem] p-10 group-hover:border-blue-600/60 transition-all duration-500 overflow-hidden group-hover:scale-105">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/8 via-primary/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                <div className="absolute inset-0 bg-gradient-to-tl from-blue-600/5 to-transparent opacity-100"></div>
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-blue-600/10 to-transparent rounded-br-[1.5rem]"></div>
                 
                 <div className="relative text-center">
-                  <div className="text-6xl md:text-8xl font-black bg-gradient-to-br from-foreground via-foreground/90 to-foreground/60 bg-clip-text text-transparent mb-4 tabular-nums leading-none">
+                  <div className="text-7xl md:text-8xl font-black bg-gradient-to-br from-foreground via-foreground/95 to-foreground/60 bg-clip-text text-transparent mb-5 tabular-nums leading-none group-hover:scale-110 transition-transform duration-500">
                     {statsAnimated ? `${sellerCount.toLocaleString('ru-RU')}+` : '0'}
                   </div>
-                  <div className="w-16 h-1 bg-gradient-to-r from-blue-600 to-primary rounded-full mx-auto mb-4"></div>
-                  <div className="text-lg text-muted-foreground font-bold uppercase tracking-[0.2em]">Продавцов</div>
+                  <div className="relative mb-5">
+                    <div className="h-1.5 w-20 bg-gradient-to-r from-blue-600 to-primary rounded-full mx-auto group-hover:w-32 transition-all duration-500"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-primary rounded-full blur-lg opacity-50"></div>
+                  </div>
+                  <div className="text-xl text-muted-foreground font-black uppercase tracking-[0.25em]">Продавцов</div>
                 </div>
               </div>
             </div>
 
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+              <div className="absolute -inset-2 bg-gradient-to-br from-green-500/30 to-green-600/30 rounded-[2rem] blur-3xl opacity-0 group-hover:opacity-100 transition-all duration-700 animate-pulse"></div>
+              <div className="absolute -inset-1 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-[1.75rem] blur-2xl opacity-60 group-hover:opacity-100 transition-all duration-500"></div>
               
-              <div className="relative bg-background/40 backdrop-blur-xl border-2 border-border/40 rounded-3xl p-8 group-hover:border-green-500/40 transition-all duration-500 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative bg-background/50 backdrop-blur-2xl border-2 border-border/50 rounded-[1.5rem] p-10 group-hover:border-green-500/60 transition-all duration-500 overflow-hidden group-hover:scale-105">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/8 via-green-600/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                <div className="absolute inset-0 bg-gradient-to-tl from-green-500/5 to-transparent opacity-100"></div>
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-green-500/10 to-transparent rounded-br-[1.5rem]"></div>
                 
                 <div className="relative text-center">
-                  <div className="text-6xl md:text-8xl font-black bg-gradient-to-br from-green-500 via-green-600 to-green-500 bg-clip-text text-transparent mb-4 tabular-nums leading-none">
+                  <div className="text-7xl md:text-8xl font-black bg-gradient-to-br from-green-500 via-green-600 to-green-500 bg-clip-text text-transparent mb-5 tabular-nums leading-none group-hover:scale-110 transition-transform duration-500">
                     {statsAnimated ? `${satisfactionRate}%` : '0%'}
                   </div>
-                  <div className="w-16 h-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full mx-auto mb-4"></div>
-                  <div className="text-lg text-muted-foreground font-bold uppercase tracking-[0.2em]">Satisfaction</div>
+                  <div className="relative mb-5">
+                    <div className="h-1.5 w-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full mx-auto group-hover:w-32 transition-all duration-500"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-green-600 rounded-full blur-lg opacity-50"></div>
+                  </div>
+                  <div className="text-xl text-muted-foreground font-black uppercase tracking-[0.25em]">Satisfaction</div>
                 </div>
               </div>
             </div>
