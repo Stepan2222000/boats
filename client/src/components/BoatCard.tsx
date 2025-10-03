@@ -14,6 +14,7 @@ interface BoatCardProps {
   year?: number;
   length?: number;
   imageUrl?: string;
+  photoUrls?: string[];
   isFavorite?: boolean;
   isPromoted?: boolean;
   photoCount: number;
@@ -32,6 +33,7 @@ export default function BoatCard({
   year,
   length,
   imageUrl,
+  photoUrls = [],
   isFavorite = false,
   isPromoted = false,
   photoCount,
@@ -66,6 +68,7 @@ export default function BoatCard({
   };
 
   const rating = typeof sellerRating === 'string' ? parseFloat(sellerRating) : sellerRating;
+  const firstPhoto = photoUrls && photoUrls.length > 0 ? photoUrls[0] : imageUrl;
 
   return (
     <Card
@@ -76,9 +79,9 @@ export default function BoatCard({
       {/* Image Section - Top */}
       <div className="relative w-full aspect-[4/3]">
         <div className="relative w-full h-full bg-muted overflow-hidden">
-          {imageUrl ? (
+          {firstPhoto ? (
             <img
-              src={imageUrl}
+              src={firstPhoto}
               alt={title}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />

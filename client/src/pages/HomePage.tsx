@@ -123,6 +123,7 @@ export default function HomePage() {
                 sellerRating={boat.sellerRating ? parseFloat(boat.sellerRating) : 4.7}
                 sellerReviewCount={boat.sellerReviewCount || 49}
                 phone={boat.phone || "+7 (999) 123-45-67"}
+                photoUrls={boat.photoUrls || []}
               />
             ))
           ) : (

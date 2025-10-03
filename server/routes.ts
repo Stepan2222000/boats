@@ -5,6 +5,7 @@ import { insertBoatSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { generateBoatListing, interpretSearchQuery } from "./openai";
 import { z } from "zod";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/boats", async (req, res) => {
@@ -125,7 +126,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         model: aiResult.model,
         boatType: aiResult.boatType,
         length: aiResult.length,
-        photoCount: 0,
+        photoCount: req.body.photoUrls?.length || 0,
+        photoUrls: req.body.photoUrls || [],
         isPromoted: false,
       };
 
@@ -177,6 +179,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(boat);
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Object Storage endpoints
+  app.get("/objects/:objectPath(*)", async (req, res) => {
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error getting object:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
+  app.post("/api/objects/upload", async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const normalizedPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+      res.json({ uploadURL, normalizedPath });
+    } catch (error: any) {
+      console.error("Error getting upload URL:", error);
       res.status(500).json({ error: error.message });
     }
   });

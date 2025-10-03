@@ -12,7 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, Image as ImageIcon, X } from "lucide-react";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 
 const listingFormSchema = z.object({
   rawDescription: z.string().min(10, "Опишите вашу лодку хотя бы в нескольких словах"),
@@ -33,6 +35,7 @@ export default function CreateListingPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
 
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(listingFormSchema),
@@ -55,7 +58,10 @@ export default function CreateListingPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          photoUrls,
+        }),
       });
       
       if (!response.ok) {
@@ -87,6 +93,42 @@ export default function CreateListingPage() {
 
   const onSubmit = (data: ListingFormValues) => {
     createMutation.mutate(data);
+  };
+
+  const handleGetUploadParameters = async () => {
+    const response = await fetch("/api/objects/upload", {
+      method: "POST",
+    });
+    const data = await response.json();
+    return {
+      method: "PUT" as const,
+      url: data.uploadURL,
+    };
+  };
+
+  const handleUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (!result.successful || result.successful.length === 0) return;
+    
+    const newUrls = result.successful
+      .map((file) => {
+        return (file.response as any)?.body?.normalizedPath || file.uploadURL;
+      })
+      .filter((url): url is string => typeof url === 'string');
+    
+    if (newUrls.length > 0) {
+      const remainingSlots = 10 - photoUrls.length;
+      const urlsToAdd = newUrls.slice(0, remainingSlots);
+      
+      setPhotoUrls((prev) => [...prev, ...urlsToAdd]);
+      toast({
+        title: "Фотографии загружены",
+        description: `Загружено ${urlsToAdd.length} фото`,
+      });
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotoUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -249,6 +291,48 @@ export default function CreateListingPage() {
                       </FormItem>
                     )}
                   />
+                </div>
+
+                {/* Photo Upload Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-bold">Фотографии</h3>
+                      <p className="text-sm text-muted-foreground">Добавьте фото вашей лодки (до 10 фото)</p>
+                    </div>
+                    <ObjectUploader
+                      maxNumberOfFiles={10}
+                      maxFileSize={10485760}
+                      onGetUploadParameters={handleGetUploadParameters}
+                      onComplete={handleUploadComplete}
+                      buttonVariant="outline"
+                    >
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      Загрузить фото
+                    </ObjectUploader>
+                  </div>
+
+                  {photoUrls.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      {photoUrls.map((url, index) => (
+                        <div key={index} className="relative group aspect-square rounded-lg overflow-hidden bg-muted">
+                          <img
+                            src={url}
+                            alt={`Фото ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removePhoto(index)}
+                            className="absolute top-2 right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            data-testid={`button-remove-photo-${index}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-4 pt-4">
