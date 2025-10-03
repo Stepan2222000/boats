@@ -469,3 +469,147 @@
     inset: -1px;
   }
 }
+
+/* Uppy Dashboard Custom Styles - Maritime Theme */
+.uppy-Root {
+  font-family: var(--font-sans);
+}
+
+.uppy-Dashboard-inner {
+  background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--card)) 100%) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 16px !important;
+}
+
+.uppy-Dashboard-AddFiles {
+  border: 2px dashed hsl(var(--primary) / 0.3) !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.02) 0%, hsl(var(--primary) / 0.08) 100%) !important;
+  transition: all 0.3s ease !important;
+}
+
+.uppy-Dashboard-AddFiles:hover {
+  border-color: hsl(var(--primary) / 0.6) !important;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.05) 0%, hsl(var(--primary) / 0.12) 100%) !important;
+  transform: translateY(-2px);
+}
+
+.uppy-Dashboard-AddFiles-title {
+  color: hsl(var(--foreground)) !important;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.uppy-Dashboard-note {
+  color: hsl(var(--muted-foreground)) !important;
+  font-size: 0.875rem !important;
+}
+
+.uppy-Dashboard-browse {
+  color: hsl(var(--primary)) !important;
+  font-weight: 600 !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.uppy-DashboardContent-bar {
+  background: hsl(var(--card)) !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+  padding: 1rem 1.5rem !important;
+}
+
+.uppy-DashboardContent-title {
+  color: hsl(var(--foreground)) !important;
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+}
+
+.uppy-Dashboard-Item {
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 8px !important;
+  background: hsl(var(--card)) !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.uppy-Dashboard-Item-previewImg {
+  border-radius: 6px !important;
+}
+
+.uppy-Dashboard-Item-name {
+  color: hsl(var(--foreground)) !important;
+  font-weight: 500 !important;
+}
+
+.uppy-Dashboard-Item-status {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.uppy-StatusBar {
+  background: hsl(var(--card)) !important;
+  border-top: 1px solid hsl(var(--border)) !important;
+  padding: 1rem 1.5rem !important;
+}
+
+.uppy-StatusBar-progress {
+  background: hsl(var(--primary) / 0.2) !important;
+  height: 6px !important;
+  border-radius: 3px !important;
+}
+
+.uppy-StatusBar-progressIndicator {
+  background: linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(205 85% 55%) 100%) !important;
+  border-radius: 3px !important;
+}
+
+.uppy-StatusBar-actionBtn--upload {
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  font-weight: 600 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 0.625rem 1.5rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.uppy-StatusBar-actionBtn--upload:hover {
+  background: hsl(205 85% 40%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.3);
+}
+
+.uppy-StatusBar-actionBtn--done {
+  background: hsl(145 65% 45%) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 0.625rem 1.5rem !important;
+}
+
+.uppy-c-btn-primary {
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.uppy-c-btn-primary:hover {
+  background: hsl(205 85% 40%) !important;
+}
+
+.uppy-Dashboard-dropFilesHereHint {
+  color: hsl(var(--primary)) !important;
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  background: hsl(var(--primary) / 0.1) !important;
+  border: 2px solid hsl(var(--primary)) !important;
+  border-radius: 12px !important;
+  padding: 2rem !important;
+}
+
+.uppy-Dashboard-AddFiles-info {
+  color: hsl(var(--muted-foreground)) !important;
+}

@@ -210,6 +210,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/objects/download-url", async (req, res) => {
+    try {
+      const { objectPath } = req.body;
+      if (!objectPath) {
+        return res.status(400).json({ error: "objectPath is required" });
+      }
+      const objectStorageService = new ObjectStorageService();
+      const downloadURL = await objectStorageService.getObjectEntityDownloadURL(objectPath);
+      res.json({ downloadURL });
+    } catch (error: any) {
+      console.error("Error getting download URL:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.status(404).json({ error: "Object not found" });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.delete("/api/boats/:id", async (req, res) => {
     try {
       const success = await storage.deleteBoat(req.params.id);

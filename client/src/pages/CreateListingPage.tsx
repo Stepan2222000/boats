@@ -36,6 +36,8 @@ export default function CreateListingPage() {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<Record<string, string>>({});
+  const [uploadUrlToNormalizedPath, setUploadUrlToNormalizedPath] = useState<Record<string, string>>({});
 
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(listingFormSchema),
@@ -100,35 +102,75 @@ export default function CreateListingPage() {
       method: "POST",
     });
     const data = await response.json();
+    
+    setUploadUrlToNormalizedPath((prev) => ({
+      ...prev,
+      [data.uploadURL]: data.normalizedPath,
+    }));
+    
     return {
       method: "PUT" as const,
       url: data.uploadURL,
     };
   };
 
-  const handleUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
     if (!result.successful || result.successful.length === 0) return;
     
-    const newUrls = result.successful
+    const normalizedPaths = result.successful
       .map((file) => {
-        return (file.response as any)?.body?.normalizedPath || file.uploadURL;
+        const uploadUrl = file.uploadURL;
+        if (!uploadUrl) return null;
+        return uploadUrlToNormalizedPath[uploadUrl] || uploadUrl;
       })
-      .filter((url): url is string => typeof url === 'string');
+      .filter((url): url is string => typeof url === 'string' && url.startsWith('/objects/'));
     
-    if (newUrls.length > 0) {
+    if (normalizedPaths.length > 0) {
       const remainingSlots = 30 - photoUrls.length;
-      const urlsToAdd = newUrls.slice(0, remainingSlots);
+      const pathsToAdd = normalizedPaths.slice(0, remainingSlots);
       
-      setPhotoUrls((prev) => [...prev, ...urlsToAdd]);
+      setPhotoUrls((prev) => [...prev, ...pathsToAdd]);
+      
+      const newPreviewUrls: Record<string, string> = {};
+      await Promise.all(
+        pathsToAdd.map(async (path) => {
+          try {
+            const response = await fetch("/api/objects/download-url", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ objectPath: path }),
+            });
+            if (response.ok) {
+              const data = await response.json();
+              newPreviewUrls[path] = data.downloadURL;
+            } else {
+              console.error("Failed to get download URL for", path, await response.text());
+            }
+          } catch (error) {
+            console.error("Error getting download URL for", path, error);
+          }
+        })
+      );
+      
+      setPhotoPreviewUrls((prev) => ({ ...prev, ...newPreviewUrls }));
+      
       toast({
         title: "Фотографии загружены",
-        description: `Загружено ${urlsToAdd.length} фото`,
+        description: `Загружено ${pathsToAdd.length} фото`,
       });
     }
   };
 
   const removePhoto = (index: number) => {
+    const urlToRemove = photoUrls[index];
     setPhotoUrls((prev) => prev.filter((_, i) => i !== index));
+    setPhotoPreviewUrls((prev) => {
+      const newUrls = { ...prev };
+      delete newUrls[urlToRemove];
+      return newUrls;
+    });
   };
 
   return (
@@ -314,23 +356,35 @@ export default function CreateListingPage() {
 
                   {photoUrls.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {photoUrls.map((url, index) => (
-                        <div key={index} className="relative group aspect-square rounded-lg overflow-hidden bg-muted">
-                          <img
-                            src={url}
-                            alt={`Фото ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removePhoto(index)}
-                            className="absolute top-2 right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                            data-testid={`button-remove-photo-${index}`}
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
+                      {photoUrls.map((url, index) => {
+                        const previewUrl = photoPreviewUrls[url];
+                        return (
+                          <div key={index} className="relative group aspect-square rounded-lg overflow-hidden bg-muted border border-border">
+                            {previewUrl ? (
+                              <img
+                                src={previewUrl}
+                                alt={`Фото ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removePhoto(index)}
+                              className="absolute top-2 right-2 w-8 h-8 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover-elevate"
+                              data-testid={`button-remove-photo-${index}`}
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                            <div className="absolute bottom-2 left-2 bg-background/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-semibold">
+                              {index + 1}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

@@ -60,6 +60,7 @@ export function ObjectUploader({
       .use(AwsS3, {
         shouldUseMultipart: false,
         getUploadParameters: onGetUploadParameters,
+        limit: 1,
       })
       .on("complete", (result) => {
         setShowModal(false);
