@@ -185,11 +185,7 @@ export default function Header() {
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuLabel>
                         <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">
-                            {user?.firstName && user?.lastName 
-                              ? `${user.firstName} ${user.lastName}`
-                              : user?.firstName || user?.lastName || "Пользователь"}
-                          </p>
+                          <p className="text-sm font-medium leading-none">Пользователь</p>
                           <p className="text-xs leading-none text-muted-foreground">{user?.phone}</p>
                         </div>
                       </DropdownMenuLabel>

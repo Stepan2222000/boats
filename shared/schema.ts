@@ -19,8 +19,6 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   phone: varchar("phone", { length: 20 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -37,8 +35,6 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const registerUserSchema = z.object({
   phone: z.string().regex(/^\+7\d{10}$/, "Номер телефона должен быть в формате +7XXXXXXXXXX"),
   password: z.string().min(6, "Пароль должен содержать минимум 6 символов"),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
 });
 
 export const loginUserSchema = z.object({

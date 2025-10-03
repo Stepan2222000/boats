@@ -1,8 +1,8 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Calendar, Anchor } from "lucide-react";
+import { User, Phone, Calendar, Anchor } from "lucide-react";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 
@@ -14,9 +14,9 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !hasRedirected) {
       setHasRedirected(true);
-      window.location.href = '/api/login';
+      setLocation('/login');
     }
-  }, [isLoading, isAuthenticated, hasRedirected]);
+  }, [isLoading, isAuthenticated, hasRedirected, setLocation]);
 
   if (isLoading) {
     return (
@@ -47,22 +47,18 @@ export default function ProfilePage() {
           <CardContent className="pt-0">
             <div className="flex flex-col md:flex-row items-start md:items-end gap-6 -mt-16 relative z-10">
               <Avatar className="w-32 h-32 border-4 border-background shadow-2xl" data-testid="img-avatar">
-                {user.profileImageUrl ? (
-                  <AvatarImage src={user.profileImageUrl} alt={user.firstName || "User"} className="object-cover" />
-                ) : (
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-blue-600 text-white text-3xl">
-                    {user.firstName?.[0] || user.email?.[0] || "U"}
-                  </AvatarFallback>
-                )}
+                <AvatarFallback className="bg-gradient-to-br from-primary to-blue-600 text-white text-3xl">
+                  <User className="w-16 h-16" />
+                </AvatarFallback>
               </Avatar>
               
               <div className="flex-1 pb-4">
                 <h1 className="text-3xl font-black mb-2" data-testid="text-user-name">
-                  {user.firstName} {user.lastName}
+                  Пользователь
                 </h1>
                 <div className="flex items-center gap-2 text-muted-foreground mb-3">
-                  <Mail className="w-4 h-4" />
-                  <span className="text-sm" data-testid="text-user-email">{user.email}</span>
+                  <Phone className="w-4 h-4" />
+                  <span className="text-sm" data-testid="text-user-phone">{user.phone}</span>
                 </div>
                 <Badge variant="secondary" className="text-xs" data-testid="badge-member-since">
                   <Calendar className="w-3 h-3 mr-1" />
@@ -84,16 +80,8 @@ export default function ProfilePage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Имя</label>
-                <p className="text-lg font-semibold" data-testid="text-first-name">{user.firstName || "Не указано"}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Фамилия</label>
-                <p className="text-lg font-semibold" data-testid="text-last-name">{user.lastName || "Не указано"}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Email</label>
-                <p className="text-lg font-semibold" data-testid="text-email">{user.email || "Не указано"}</p>
+                <label className="text-sm font-medium text-muted-foreground">Номер телефона</label>
+                <p className="text-lg font-semibold" data-testid="text-phone">{user.phone}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">ID пользователя</label>
