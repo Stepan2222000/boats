@@ -4,6 +4,8 @@ import { eq, desc, or, ilike, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
+  getUserByPhone(phone: string): Promise<User | undefined>;
+  createUser(user: { phone: string; passwordHash: string; firstName?: string; lastName?: string }): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   getBoat(id: string): Promise<Boat | undefined>;
   getAllBoats(): Promise<Boat[]>;
@@ -27,6 +29,24 @@ export interface IStorage {
 export class DbStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByPhone(phone: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.phone, phone));
+    return user;
+  }
+
+  async createUser(userData: { phone: string; passwordHash: string; firstName?: string; lastName?: string }): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        phone: userData.phone,
+        passwordHash: userData.passwordHash,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+      })
+      .returning();
     return user;
   }
 

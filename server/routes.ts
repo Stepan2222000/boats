@@ -1,27 +1,107 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertBoatSchema } from "@shared/schema";
+import { insertBoatSchema, registerUserSchema, loginUserSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { generateBoatListing, interpretSearchQuery } from "./openai";
 import { z } from "zod";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { registerUser, loginUser } from "./auth";
+
+// Middleware to check authentication
+export function isAuthenticated(req: any, res: any, next: any) {
+  if (!req.session?.userId) {
+    return res.status(401).json({ message: "Необходима авторизация" });
+  }
+  next();
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup Replit Auth
-  await setupAuth(app);
-
   // Auth routes
+  app.post('/api/register', async (req, res) => {
+    try {
+      const result = registerUserSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: fromZodError(result.error).message 
+        });
+      }
+
+      const user = await registerUser(result.data);
+      req.session.userId = user.id;
+      
+      res.json({ 
+        authenticated: true, 
+        user: {
+          id: user.id,
+          phone: user.phone,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        }
+      });
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/login', async (req, res) => {
+    try {
+      const result = loginUserSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: fromZodError(result.error).message 
+        });
+      }
+
+      const user = await loginUser(result.data);
+      req.session.userId = user.id;
+      
+      res.json({ 
+        authenticated: true, 
+        user: {
+          id: user.id,
+          phone: user.phone,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        }
+      });
+    } catch (error: any) {
+      console.error("Login error:", error);
+      res.status(401).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/logout', async (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Ошибка при выходе" });
+      }
+      res.json({ message: "Успешный выход" });
+    });
+  });
+
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      if (!req.user || !req.user.claims || !req.user.claims.sub) {
+      if (!req.session?.userId) {
         return res.json({ authenticated: false, user: null });
       }
       
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json({ authenticated: true, user });
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.json({ authenticated: false, user: null });
+      }
+      
+      res.json({ 
+        authenticated: true, 
+        user: {
+          id: user.id,
+          phone: user.phone,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        }
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -105,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/boats/ai-create", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       
       const aiInputSchema = z.object({
         rawDescription: z.string().min(10, "Description must be at least 10 characters"),
@@ -171,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/boats", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       
       const result = insertBoatSchema.safeParse({
         ...req.body,
@@ -193,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/boats/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const boat = await storage.getBoat(req.params.id);
       
       if (!boat) {
@@ -221,7 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/boats/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const boat = await storage.getBoat(req.params.id);
       
       if (!boat) {
@@ -241,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/boats/:id/view", async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub || null;
+      const userId = req.session?.userId || null;
       const success = await storage.recordView(req.params.id, userId);
       
       if (!success) {
