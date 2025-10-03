@@ -45,13 +45,13 @@ export default function BoatCard({
 
   return (
     <Card
-      className="group relative overflow-hidden cursor-pointer hover-elevate flex flex-col sm:flex-row"
+      className="group relative overflow-hidden cursor-pointer hover-elevate flex flex-row"
       onClick={handleCardClick}
       data-testid={`card-boat-${id}`}
     >
-      {/* Image Section - Left side on desktop, top on mobile */}
-      <div className="relative w-full sm:w-64 flex-shrink-0">
-        <div className="relative aspect-square sm:aspect-auto sm:h-full bg-muted overflow-hidden">
+      {/* Image Section - Left side */}
+      <div className="relative w-48 sm:w-56 md:w-64 flex-shrink-0">
+        <div className="relative h-full bg-muted overflow-hidden">
           {imageUrl ? (
             <img
               src={imageUrl}
