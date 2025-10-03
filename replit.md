@@ -6,6 +6,22 @@ This is a boat marketplace application built with React, Express, and PostgreSQL
 
 ## Recent Changes
 
+**October 3, 2025** - User Authentication & Profile Management
+- **Replit Auth Integration**: Implemented OpenID Connect authentication flow using Replit Auth
+- **Database Schema**: Added users table (id, email, firstName, lastName, profileImageUrl) and sessions table for session storage
+- **User-Boat Relationship**: Added userId field to boats table to link listings to their owners
+- **Authentication Middleware**: Created isAuthenticated middleware for protected routes
+- **useAuth Hook**: Client-side React hook for accessing current user state and authentication status
+- **Profile Page**: New /profile route displaying user information (name, email, avatar, member since date)
+- **Protected Routes**: CreateListingPage now requires authentication, redirects to login if not authenticated
+- **Header Updates**: Dynamic login/logout buttons, user avatar dropdown with profile and logout options
+- **Auth Routes**: 
+  - GET /api/auth/user - Returns authentication state and user data
+  - GET /api/login - Initiates OIDC login flow
+  - GET /api/logout - Logs out user and clears session
+  - GET /api/callback - OIDC callback handler
+- **Listing Creation**: Boat listings now automatically linked to authenticated user's ID
+
 **October 3, 2025** - Photo Upload Enhancements
 - **Uppy Modal Styling**: Custom maritime-themed CSS with blue gradients, smooth animations, styled progress bars, and rounded corners for professional appearance
 - **Sequential Upload**: Files now upload one at a time (limit: 1) for reliability and better user feedback
@@ -60,11 +76,17 @@ Preferred communication style: Simple, everyday language.
 
 **API Design**
 - RESTful endpoints under `/api` namespace
-- Key routes:
+- Authentication routes:
+  - `GET /api/auth/user` - Get current authenticated user
+  - `GET /api/login` - Initiate Replit Auth login flow
+  - `GET /api/logout` - Logout and clear session
+  - `GET /api/callback` - OIDC callback handler
+- Boat listing routes:
   - `GET /api/boats` - Retrieve all boats
   - `GET /api/boats/search` - Search with filters (query, price, year, type, location)
   - `GET /api/boats/:id` - Get single boat details
-  - `POST /api/boats/ai-create` - AI-powered listing creation
+  - `POST /api/boats/ai-create` - AI-powered listing creation (requires authentication)
+  - `POST /api/boats` - Create boat listing (requires authentication)
 - JSON request/response format with Zod validation
 
 **Data Validation**
@@ -81,12 +103,20 @@ Preferred communication style: Simple, everyday language.
 - WebSocket connection support for serverless environments
 
 **Schema Design**
+- `users` table for user authentication:
+  - Identity: id (varchar UUID primary key)
+  - Profile: email, firstName, lastName, profileImageUrl
+  - Timestamps: createdAt, updatedAt
+- `sessions` table for Express session storage:
+  - Used by connect-pg-simple for session persistence
+  - Fields: sid (primary key), sess (jsonb), expire (timestamp)
 - `boats` table as primary entity with fields:
   - Identity: id (UUID), timestamps
+  - Owner: userId (references users.id)
   - Content: title, description, manufacturer, model
   - Specifications: year, length, boatType
   - Pricing: price, currency (defaults to ₽)
-  - Media: photoCount
+  - Media: photoCount, photoUrls
   - Location: location field
   - Features: isPromoted flag for highlighted listings
 - All migrations stored in `/migrations` directory
@@ -112,6 +142,14 @@ Preferred communication style: Simple, everyday language.
 - Connection via `@neondatabase/serverless` package with WebSocket support (using `ws` library)
 - Connection string via `DATABASE_URL` environment variable
 - Pooled connections for optimal performance
+- Session storage via connect-pg-simple for persistent user sessions
+
+**Authentication Service**
+- Replit Auth using OpenID Connect (OIDC) protocol
+- Passport.js for authentication middleware
+- Session management with express-session and PostgreSQL storage
+- Environment variables: `SESSION_SECRET`, `ISSUER_URL`, `REPL_ID`
+- Automatic user profile creation/update on first login
 
 **Development Tools**
 - Replit-specific plugins for enhanced development experience:

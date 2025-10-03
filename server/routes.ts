@@ -6,8 +6,28 @@ import { fromZodError } from "zod-validation-error";
 import { generateBoatListing, interpretSearchQuery } from "./openai";
 import { z } from "zod";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup Replit Auth
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', async (req: any, res) => {
+    try {
+      if (!req.user || !req.user.claims || !req.user.claims.sub) {
+        return res.json({ authenticated: false, user: null });
+      }
+      
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json({ authenticated: true, user });
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   app.get("/api/boats", async (req, res) => {
     try {
       const boats = await storage.getAllBoats();
@@ -83,8 +103,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/boats/ai-create", async (req, res) => {
+  app.post("/api/boats/ai-create", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      
       const aiInputSchema = z.object({
         rawDescription: z.string().min(10, "Description must be at least 10 characters"),
         price: z.coerce.number().positive("Price must be a positive number"),
@@ -116,6 +138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const boatData = {
+        userId,
         title: aiResult.title,
         description: aiResult.description,
         price: inputResult.data.price,
@@ -146,9 +169,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/boats", async (req, res) => {
+  app.post("/api/boats", isAuthenticated, async (req: any, res) => {
     try {
-      const result = insertBoatSchema.safeParse(req.body);
+      const userId = req.user.claims.sub;
+      
+      const result = insertBoatSchema.safeParse({
+        ...req.body,
+        userId,
+      });
       
       if (!result.success) {
         return res.status(400).json({ 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -15,6 +15,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Sparkles, Loader2, Image as ImageIcon, X } from "lucide-react";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
+import { useAuth } from "@/hooks/useAuth";
 
 const listingFormSchema = z.object({
   rawDescription: z.string().min(10, "Опишите вашу лодку хотя бы в нескольких словах"),
@@ -34,10 +35,24 @@ type ListingFormValues = z.infer<typeof listingFormSchema>;
 export default function CreateListingPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user, isLoading, isAuthenticated } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<Record<string, string>>({});
   const [uploadUrlToNormalizedPath, setUploadUrlToNormalizedPath] = useState<Record<string, string>>({});
+  const [hasRedirected, setHasRedirected] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && !hasRedirected) {
+      setHasRedirected(true);
+      toast({
+        title: "Требуется авторизация",
+        description: "Пожалуйста, войдите чтобы разместить объявление.",
+        variant: "destructive",
+      });
+      window.location.href = '/api/login';
+    }
+  }, [isLoading, isAuthenticated, hasRedirected, toast]);
 
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(listingFormSchema),

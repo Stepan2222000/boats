@@ -1,14 +1,25 @@
 import { Link, useLocation } from "wouter";
-import { Search, Heart, User, Menu, MessageCircle, Sparkles, Plus, Anchor, Waves } from "lucide-react";
+import { Search, Heart, User, Menu, MessageCircle, Sparkles, Plus, Anchor, Waves, LogIn, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [, setLocation] = useLocation();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,14 +134,61 @@ export default function Header() {
                 <Sparkles className="w-4 h-4 ml-2 relative z-10 opacity-80 animate-pulse" />
               </Button>
             </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl hover-elevate"
-              data-testid="button-profile"
-            >
-              <User className="w-5 h-5" />
-            </Button>
+            {!isLoading && (
+              <>
+                {isAuthenticated ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl hover-elevate"
+                        data-testid="button-profile"
+                      >
+                        {user?.profileImageUrl ? (
+                          <Avatar className="w-8 h-8">
+                            <AvatarImage src={user.profileImageUrl} alt={user.firstName || "User"} className="object-cover" />
+                            <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <User className="w-5 h-5" />
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel>
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">{user?.firstName} {user?.lastName}</p>
+                          <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setLocation('/profile')} data-testid="menu-profile">
+                        <User className="w-4 h-4 mr-2" />
+                        Мой профиль
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild data-testid="menu-logout">
+                        <a href="/api/logout" className="w-full cursor-pointer">
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Выйти
+                        </a>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl hover-elevate"
+                    onClick={() => window.location.href = '/api/login'}
+                    data-testid="button-login"
+                  >
+                    <LogIn className="w-5 h-5" />
+                  </Button>
+                )}
+              </>
+            )}
             <Button
               variant="ghost"
               size="icon"
