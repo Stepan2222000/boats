@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 
 export default function HeroSearch() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -10,6 +11,7 @@ export default function HeroSearch() {
   const [listingCount, setListingCount] = useState(0);
   const [sellerCount, setSellerCount] = useState(0);
   const [satisfactionRate, setSatisfactionRate] = useState(0);
+  const [, setLocation] = useLocation();
 
   const categories = [
     "Катера",
@@ -19,8 +21,17 @@ export default function HeroSearch() {
     "Парусные яхты"
   ];
 
-  const handleSearch = () => {
-    console.log("Search triggered:", searchQuery);
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    
+    if (!searchQuery.trim()) {
+      return;
+    }
+
+    const encodedQuery = encodeURIComponent(searchQuery);
+    setLocation(`/search?q=${encodedQuery}`);
   };
 
   useEffect(() => {
@@ -202,14 +213,13 @@ export default function HeroSearch() {
                   {/* Input glow effect */}
                   <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-blue-600/30 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   
-                  <div className="relative">
+                  <form onSubmit={handleSearch} className="relative">
                     <Search className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 w-5 h-5 md:w-7 md:h-7 text-muted-foreground z-10 transition-all duration-300 group-hover:text-primary group-hover:scale-110" />
                     <Input
                       type="search"
                       placeholder='Опишите желаемое: "Яхта Sea Ray 2020+"'
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                       className="relative pl-12 md:pl-16 pr-12 md:pr-16 h-14 md:h-18 text-base md:text-xl border-2 border-border/60 rounded-2xl focus-visible:ring-4 focus-visible:ring-primary/30 focus-visible:border-primary transition-all duration-300 bg-background/50 backdrop-blur-sm font-medium"
                       data-testid="input-hero-search"
                     />
@@ -222,7 +232,7 @@ export default function HeroSearch() {
                         </div>
                       </div>
                     )}
-                  </div>
+                  </form>
                 </div>
                 <Button
                   size="lg"

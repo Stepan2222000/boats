@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertBoatSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
-import { generateBoatListing } from "./openai";
+import { generateBoatListing, interpretSearchQuery } from "./openai";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -12,6 +12,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const boats = await storage.getAllBoats();
       res.json(boats);
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/boats/ai-search", async (req, res) => {
+    try {
+      const aiSearchSchema = z.object({
+        query: z.string().min(1, "Query cannot be empty"),
+      });
+
+      const inputResult = aiSearchSchema.safeParse(req.body);
+      if (!inputResult.success) {
+        return res.status(400).json({ 
+          error: fromZodError(inputResult.error).message 
+        });
+      }
+
+      const searchParams = await interpretSearchQuery(inputResult.data.query);
+
+      const boats = await storage.searchBoats({
+        query: searchParams.query || undefined,
+        minPrice: searchParams.minPrice || undefined,
+        maxPrice: searchParams.maxPrice || undefined,
+        year: searchParams.year || undefined,
+        boatType: searchParams.boatType || undefined,
+        location: searchParams.location || undefined,
+      });
+
+      res.json({
+        boats,
+        interpretedParams: searchParams,
+      });
+    } catch (error: any) {
+      console.error("AI search error:", error);
       res.status(500).json({ error: error.message });
     }
   });

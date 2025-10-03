@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { z } from "zod";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY is not set");
@@ -7,8 +8,6 @@ if (!process.env.OPENAI_API_KEY) {
 export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-import { z } from "zod";
 
 const aiResponseSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -108,5 +107,111 @@ ${input.length ? `- Длина: ${input.length} м` : ''}
   } catch (error) {
     console.error("OpenAI API error:", error);
     throw new Error("Не удалось обработать данные с помощью AI");
+  }
+}
+
+const searchQuerySchema = z.object({
+  query: z.string().nullable(),
+  minPrice: z.number().positive().nullable(),
+  maxPrice: z.number().positive().nullable(),
+  year: z.number().int().nullable(),
+  boatType: z.string().nullable(),
+  location: z.string().nullable(),
+});
+
+export async function interpretSearchQuery(userQuery: string) {
+  const prompt = `Ты помощник для маркетплейса водной техники. Пользователь ищет лодку/катер/яхту.
+
+Запрос пользователя: "${userQuery}"
+
+Твоя задача - извлечь параметры поиска из запроса. Анализируй:
+- Цену (минимальную и максимальную в рублях)
+- Год выпуска
+- Тип лодки (Катер, Яхта, Гидроцикл, Лодка)
+- Местоположение (город)
+- Ключевые слова для текстового поиска (производитель, модель, особенности)
+
+Примеры:
+"Катер до 3 миллионов в Сочи" → minPrice: null, maxPrice: 3000000, location: "Сочи", boatType: "Катер"
+"Яхта Sea Ray 2018 года" → query: "Sea Ray", year: 2018, boatType: "Яхта"
+"Гидроцикл Yamaha от 500 тысяч до миллиона" → query: "Yamaha", minPrice: 500000, maxPrice: 1000000, boatType: "Гидроцикл"
+
+Верни результат строго в формате JSON:
+{
+  "query": "текст для поиска или null",
+  "minPrice": минимальная цена (число) или null,
+  "maxPrice": максимальная цена (число) или null,
+  "year": год выпуска (число) или null,
+  "boatType": "Катер/Яхта/Гидроцикл/Лодка или null",
+  "location": "город или null"
+}
+
+ВАЖНО:
+- Все числовые поля должны быть числами (number), не строками
+- Цены в рублях (преобразуй "миллион" → 1000000, "тысяч" → 1000)
+- Если параметр не указан, верни null
+- query используй для производителя, модели, или других ключевых слов`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "Ты помощник для поиска водной техники. Ты понимаешь русский язык и умеешь извлекать параметры поиска из запросов пользователей.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+    });
+
+    const content = completion.choices[0].message.content;
+    if (!content) {
+      throw new Error("No response from OpenAI");
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (parseError) {
+      console.error("Failed to parse OpenAI search response:", content);
+      return {
+        query: userQuery,
+        minPrice: null,
+        maxPrice: null,
+        year: null,
+        boatType: null,
+        location: null,
+      };
+    }
+
+    const validationResult = searchQuerySchema.safeParse(parsed);
+    if (!validationResult.success) {
+      console.error("Search query validation failed:", validationResult.error);
+      return {
+        query: userQuery,
+        minPrice: null,
+        maxPrice: null,
+        year: null,
+        boatType: null,
+        location: null,
+      };
+    }
+    
+    return validationResult.data;
+  } catch (error) {
+    console.error("OpenAI search interpretation error:", error);
+    return {
+      query: userQuery,
+      minPrice: null,
+      maxPrice: null,
+      year: null,
+      boatType: null,
+      location: null,
+    };
   }
 }
