@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,10 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Sparkles, Save, RefreshCw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Settings, Sparkles, Save, RefreshCw, Package, Edit, Trash2, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { AiSetting } from "@shared/schema";
+import type { AiSetting, Boat } from "@shared/schema";
 
 const DEFAULT_SETTINGS = {
   listingModel: "gpt-4o-mini",
@@ -34,10 +36,15 @@ const DEFAULT_SETTINGS = {
 
 export default function AdminPage() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [editMode, setEditMode] = useState<Record<string, boolean>>({});
 
   const { data: settings, isLoading } = useQuery<AiSetting[]>({
     queryKey: ['/api/admin/ai-settings'],
+  });
+
+  const { data: boats, isLoading: boatsLoading } = useQuery<Boat[]>({
+    queryKey: ['/api/boats'],
   });
 
   const updateMutation = useMutation({
@@ -107,6 +114,10 @@ export default function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="prompts" data-testid="tab-prompts">
               Промпты
+            </TabsTrigger>
+            <TabsTrigger value="listings" data-testid="tab-listings">
+              <Package className="w-4 h-4 mr-2" />
+              Объявления
             </TabsTrigger>
           </TabsList>
 
@@ -338,6 +349,106 @@ export default function AdminPage() {
                     >
                       Изменить
                     </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="listings" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Управление объявлениями</CardTitle>
+                <CardDescription>
+                  Все объявления на платформе с статистикой просмотров
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {boatsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Всего объявлений</p>
+                        <p className="text-2xl font-bold">{boats?.length || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Всего просмотров</p>
+                        <p className="text-2xl font-bold">
+                          {boats?.reduce((sum, boat) => sum + (boat.viewCount || 0), 0) || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Средняя цена</p>
+                        <p className="text-2xl font-bold">
+                          {boats && boats.length > 0
+                            ? Math.round(boats.reduce((sum, boat) => sum + boat.price, 0) / boats.length).toLocaleString()
+                            : 0}{" "}
+                          ₽
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      {boats?.map((boat) => (
+                        <Card key={boat.id} className="hover-elevate">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <h3 className="font-bold mb-1">{boat.title}</h3>
+                                <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
+                                  {boat.description}
+                                </p>
+                                <div className="flex flex-wrap gap-2 text-xs">
+                                  <Badge variant="secondary">
+                                    {boat.price.toLocaleString()} {boat.currency}
+                                  </Badge>
+                                  <Badge variant="outline">{boat.year} год</Badge>
+                                  <Badge variant="outline">{boat.location}</Badge>
+                                  {boat.boatType && <Badge variant="outline">{boat.boatType}</Badge>}
+                                  <Badge variant="outline" className="gap-1">
+                                    <Eye className="w-3 h-3" />
+                                    {boat.viewCount || 0} просмотров
+                                  </Badge>
+                                  {boat.isPromoted && <Badge>Продвигается</Badge>}
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setLocation(`/listing/${boat.id}`)}
+                                  className="gap-1"
+                                  data-testid={`button-view-${boat.id}`}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  Просмотр
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setLocation(`/edit/${boat.id}`)}
+                                  className="gap-1"
+                                  data-testid={`button-admin-edit-${boat.id}`}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                  Изменить
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      
+                      {boats?.length === 0 && (
+                        <div className="text-center py-12 text-muted-foreground">
+                          Объявлений пока нет
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </CardContent>

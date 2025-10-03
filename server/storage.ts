@@ -18,6 +18,7 @@ export interface IStorage {
   createBoat(boat: InsertBoat): Promise<Boat>;
   updateBoat(id: string, boat: Partial<InsertBoat>): Promise<Boat | undefined>;
   deleteBoat(id: string): Promise<boolean>;
+  recordView(boatId: string, userId: string | null): Promise<boolean>;
   getAllAiSettings(): Promise<AiSetting[]>;
   getAiSetting(key: string): Promise<AiSetting | undefined>;
   upsertAiSetting(key: string, value: string, description?: string): Promise<AiSetting>;
@@ -131,6 +132,32 @@ export class DbStorage implements IStorage {
   async deleteBoat(id: string): Promise<boolean> {
     const result = await db.delete(boats).where(eq(boats.id, id)).returning();
     return result.length > 0;
+  }
+
+  async recordView(boatId: string, userId: string | null): Promise<boolean> {
+    try {
+      const boat = await this.getBoat(boatId);
+      if (!boat) return false;
+
+      const currentHistory = (boat.viewHistory as any) || [];
+      const newView = {
+        userId: userId || "anonymous",
+        timestamp: new Date().toISOString(),
+      };
+
+      await db
+        .update(boats)
+        .set({
+          viewCount: (boat.viewCount || 0) + 1,
+          viewHistory: [...currentHistory, newView] as any,
+        })
+        .where(eq(boats.id, boatId));
+
+      return true;
+    } catch (error) {
+      console.error("Error recording view:", error);
+      return false;
+    }
   }
 
   async getAllAiSettings(): Promise<AiSetting[]> {

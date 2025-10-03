@@ -191,8 +191,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/boats/:id", async (req, res) => {
+  app.put("/api/boats/:id", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      const boat = await storage.getBoat(req.params.id);
+      
+      if (!boat) {
+        return res.status(404).json({ error: "Boat not found" });
+      }
+
+      if (boat.userId !== userId) {
+        return res.status(403).json({ error: "You don't have permission to edit this listing" });
+      }
+
       const result = insertBoatSchema.partial().safeParse(req.body);
       
       if (!result.success) {
@@ -201,12 +212,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const boat = await storage.updateBoat(req.params.id, result.data);
+      const updatedBoat = await storage.updateBoat(req.params.id, result.data);
+      res.json(updatedBoat);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/boats/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const boat = await storage.getBoat(req.params.id);
+      
       if (!boat) {
         return res.status(404).json({ error: "Boat not found" });
       }
-      res.json(boat);
+
+      if (boat.userId !== userId) {
+        return res.status(403).json({ error: "You don't have permission to delete this listing" });
+      }
+
+      await storage.deleteBoat(req.params.id);
+      res.json({ success: true });
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/boats/:id/view", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || null;
+      const success = await storage.recordView(req.params.id, userId);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Boat not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error recording view:", error);
       res.status(500).json({ error: error.message });
     }
   });

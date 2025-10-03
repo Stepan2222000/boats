@@ -44,6 +44,8 @@ export const boats = pgTable("boats", {
   photoCount: integer("photo_count").default(0),
   photoUrls: text("photo_urls").array().default(sql`ARRAY[]::text[]`),
   isPromoted: boolean("is_promoted").default(false),
+  viewCount: integer("view_count").default(0),
+  viewHistory: jsonb("view_history").default(sql`'[]'::jsonb`),
   sellerName: text("seller_name").default("BESTMARINE"),
   sellerRating: decimal("seller_rating", { precision: 2, scale: 1 }).default("4.7"),
   sellerReviewCount: integer("seller_review_count").default(49),
@@ -56,6 +58,8 @@ export const insertBoatSchema = createInsertSchema(boats).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  viewCount: true,
+  viewHistory: true,
 }).extend({
   price: z.number().positive(),
   year: z.number().min(1900).max(new Date().getFullYear() + 1),

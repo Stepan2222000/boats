@@ -7,6 +7,7 @@ import HomePage from "@/pages/HomePage";
 import CatalogPage from "@/pages/CatalogPage";
 import ListingPage from "@/pages/ListingPage";
 import CreateListingPage from "@/pages/CreateListingPage";
+import EditListingPage from "@/pages/EditListingPage";
 import SearchResultsPage from "@/pages/SearchResultsPage";
 import AdminPage from "@/pages/AdminPage";
 import ProfilePage from "@/pages/ProfilePage";
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/catalog" component={CatalogPage} />
       <Route path="/listing/:id" component={ListingPage} />
       <Route path="/create" component={CreateListingPage} />
+      <Route path="/edit/:id" component={EditListingPage} />
       <Route path="/search" component={SearchResultsPage} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/profile" component={ProfilePage} />
