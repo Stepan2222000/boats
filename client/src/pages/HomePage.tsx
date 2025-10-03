@@ -109,57 +109,69 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative py-24 overflow-hidden">
+      <section className="relative py-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-blue-500/5 to-primary/10"></div>
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
         </div>
         
         <div className="relative max-w-7xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-gradient-to-r from-primary to-blue-600 text-primary-foreground border-0">
+          <div className="text-center mb-20">
+            <Badge className="mb-6 bg-gradient-to-r from-primary via-blue-600 to-primary text-primary-foreground border-0 px-6 py-3 text-base font-bold shadow-xl bg-[length:200%_100%]">
               Лидер рынка
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">Почему выбирают Boat</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Самая современная платформа для покупки и продажи водной техники
+            <h2 className="text-5xl md:text-6xl lg:text-7xl font-black mb-6 bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">Почему выбирают Boat</h2>
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto font-medium">
+              Самая современная платформа для покупки и продажи водной техники в России и СНГ
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="border-2 border-border/50 bg-background/80 backdrop-blur-sm hover-elevate transition-all duration-300 hover:border-primary/30 hover:shadow-2xl group">
-              <CardContent className="p-8 text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <TrendingUp className="w-10 h-10 text-primary" />
+            <Card className="relative overflow-hidden border-2 border-border/50 bg-background/90 backdrop-blur-xl hover-elevate transition-all duration-500 hover:border-primary/40 hover:shadow-[0_20px_60px_rgba(0,0,0,0.15)] group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <CardContent className="relative p-10 text-center">
+                <div className="relative inline-block mb-8">
+                  <div className="w-24 h-24 bg-gradient-to-br from-primary/20 via-blue-500/20 to-primary/10 rounded-3xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-500 shadow-xl">
+                    <TrendingUp className="w-12 h-12 text-primary" />
+                  </div>
+                  <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 to-blue-600/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Крупнейший выбор</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Более 10,000 объявлений о продаже катеров и яхт по всей России. Ежедневно добавляются новые предложения
+                <h3 className="text-3xl font-black mb-4 group-hover:text-primary transition-colors">Крупнейший выбор</h3>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Более 10,000 объявлений о продаже катеров и яхт по всей России. Ежедневно добавляются новые предложения от проверенных продавцов
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-border/50 bg-background/80 backdrop-blur-sm hover-elevate transition-all duration-300 hover:border-primary/30 hover:shadow-2xl group">
-              <CardContent className="p-8 text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Shield className="w-10 h-10 text-primary" />
+            <Card className="relative overflow-hidden border-2 border-border/50 bg-background/90 backdrop-blur-xl hover-elevate transition-all duration-500 hover:border-primary/40 hover:shadow-[0_20px_60px_rgba(0,0,0,0.15)] group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <CardContent className="relative p-10 text-center">
+                <div className="relative inline-block mb-8">
+                  <div className="w-24 h-24 bg-gradient-to-br from-primary/20 via-blue-500/20 to-primary/10 rounded-3xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-500 shadow-xl">
+                    <Shield className="w-12 h-12 text-primary" />
+                  </div>
+                  <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 to-blue-600/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Проверенные продавцы</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Система рейтингов и отзывов для безопасных сделок. Только проверенные дилеры и частные продавцы
+                <h3 className="text-3xl font-black mb-4 group-hover:text-primary transition-colors">Проверенные продавцы</h3>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Система рейтингов и отзывов для безопасных сделок. Только проверенные дилеры и частные продавцы с подтвержденной репутацией
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-border/50 bg-background/80 backdrop-blur-sm hover-elevate transition-all duration-300 hover:border-primary/30 hover:shadow-2xl group">
-              <CardContent className="p-8 text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Users className="w-10 h-10 text-primary" />
+            <Card className="relative overflow-hidden border-2 border-border/50 bg-background/90 backdrop-blur-xl hover-elevate transition-all duration-500 hover:border-primary/40 hover:shadow-[0_20px_60px_rgba(0,0,0,0.15)] group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <CardContent className="relative p-10 text-center">
+                <div className="relative inline-block mb-8">
+                  <div className="w-24 h-24 bg-gradient-to-br from-primary/20 via-blue-500/20 to-primary/10 rounded-3xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-500 shadow-xl">
+                    <Users className="w-12 h-12 text-primary" />
+                  </div>
+                  <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 to-blue-600/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Умный AI-поиск</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Искусственный интеллект помогает найти именно то, что вы ищете. Просто опишите желаемое
+                <h3 className="text-3xl font-black mb-4 group-hover:text-primary transition-colors">Умный AI-поиск</h3>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Искусственный интеллект нового поколения помогает найти именно то, что вы ищете. Просто опишите желаемое своими словами
                 </p>
               </CardContent>
             </Card>
