@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import HeroSearch from "@/components/HeroSearch";
 import BoatCard from "@/components/BoatCard";
@@ -6,52 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, Shield, Users, Sparkles, Anchor, MessageCircle } from "lucide-react";
+import type { Boat } from "@shared/schema";
 
 export default function HomePage() {
-  const featuredBoats = [
-    {
-      id: "1",
-      title: "Sea Ray 320 Sundancer",
-      price: 3490000,
-      currency: "₽",
-      location: "Краснодар",
-      year: 2015,
-      length: 9.8,
-      photoCount: 12,
-      isPromoted: true
-    },
-    {
-      id: "2",
-      title: "Bayliner VR5 Cuddy",
-      price: 2100000,
-      currency: "₽",
-      location: "Москва",
-      year: 2018,
-      length: 5.8,
-      photoCount: 8
-    },
-    {
-      id: "3",
-      title: "Yamaha 242X E-Series",
-      price: 4200000,
-      currency: "₽",
-      location: "Сочи",
-      year: 2020,
-      length: 7.3,
-      photoCount: 15
-    },
-    {
-      id: "4",
-      title: "Boston Whaler 270 Vantage",
-      price: 5800000,
-      currency: "₽",
-      location: "Санкт-Петербург",
-      year: 2019,
-      length: 8.2,
-      photoCount: 20,
-      isPromoted: true
-    }
-  ];
+  const { data: boats, isLoading } = useQuery<Boat[]>({
+    queryKey: ["/api/boats"],
+  });
 
   const popularSearches = [
     "Sea Ray",
@@ -104,9 +65,32 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredBoats.map((boat) => (
-            <BoatCard key={boat.id} {...boat} />
-          ))}
+          {isLoading ? (
+            <div className="col-span-full text-center py-20">
+              <div className="inline-block animate-pulse text-2xl font-black text-primary">
+                Загрузка...
+              </div>
+            </div>
+          ) : boats && boats.length > 0 ? (
+            boats.map((boat) => (
+              <BoatCard
+                key={boat.id}
+                id={boat.id}
+                title={boat.title}
+                price={boat.price}
+                currency={boat.currency}
+                location={boat.location}
+                year={boat.year}
+                length={boat.length ? parseFloat(boat.length) : undefined}
+                photoCount={boat.photoCount || 0}
+                isPromoted={boat.isPromoted || false}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-20">
+              <p className="text-xl text-muted-foreground">Объявления не найдены</p>
+            </div>
+          )}
         </div>
         <div className="text-center mt-8 md:hidden">
           <Link href="/catalog">
