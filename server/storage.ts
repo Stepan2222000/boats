@@ -1,4 +1,4 @@
-import { type Boat, type InsertBoat, boats, type AiSetting, aiSettings, type User, type UpsertUser, users } from "@shared/schema";
+import { type Boat, type InsertBoat, boats, type AiSetting, aiSettings, type User, users } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, or, ilike, sql } from "drizzle-orm";
 
@@ -6,7 +6,6 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByPhone(phone: string): Promise<User | undefined>;
   createUser(user: { phone: string; passwordHash: string; firstName?: string; lastName?: string }): Promise<User>;
-  upsertUser(user: UpsertUser): Promise<User>;
   getBoat(id: string): Promise<Boat | undefined>;
   getAllBoats(): Promise<Boat[]>;
   searchBoats(params: {
@@ -50,20 +49,6 @@ export class DbStorage implements IStorage {
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
-  }
 
   async getBoat(id: string): Promise<Boat | undefined> {
     const result = await db.select().from(boats).where(eq(boats.id, id)).limit(1);

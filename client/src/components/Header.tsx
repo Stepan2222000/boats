@@ -1,11 +1,14 @@
 import { Link, useLocation } from "wouter";
-import { Search, Heart, User, Menu, MessageCircle, Sparkles, Plus, Anchor, Waves, LogIn, LogOut } from "lucide-react";
+import { Search, Heart, User, Menu, MessageCircle, Sparkles, Plus, Anchor, Waves, LogIn, LogOut, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,12 +23,39 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, isLoading } = useAuth();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/logout");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Вы вышли из аккаунта",
+      });
+      setLocation("/");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Ошибка при выходе",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       setLocation(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
+  };
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
 
   return (
@@ -145,21 +175,22 @@ export default function Header() {
                         className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl hover-elevate"
                         data-testid="button-profile"
                       >
-                        {user?.profileImageUrl ? (
-                          <Avatar className="w-8 h-8">
-                            <AvatarImage src={user.profileImageUrl} alt={user.firstName || "User"} className="object-cover" />
-                            <AvatarFallback><User className="w-5 h-5" /></AvatarFallback>
-                          </Avatar>
-                        ) : (
-                          <User className="w-5 h-5" />
-                        )}
+                        <Avatar className="w-8 h-8">
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            <User className="w-5 h-5" />
+                          </AvatarFallback>
+                        </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuLabel>
                         <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">{user?.firstName} {user?.lastName}</p>
-                          <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                          <p className="text-sm font-medium leading-none">
+                            {user?.firstName && user?.lastName 
+                              ? `${user.firstName} ${user.lastName}`
+                              : user?.firstName || user?.lastName || "Пользователь"}
+                          </p>
+                          <p className="text-xs leading-none text-muted-foreground">{user?.phone}</p>
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
@@ -168,24 +199,38 @@ export default function Header() {
                         Мой профиль
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild data-testid="menu-logout">
-                        <a href="/api/logout" className="w-full cursor-pointer">
-                          <LogOut className="w-4 h-4 mr-2" />
-                          Выйти
-                        </a>
+                      <DropdownMenuItem 
+                        onClick={handleLogout} 
+                        data-testid="menu-logout"
+                        disabled={logoutMutation.isPending}
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        {logoutMutation.isPending ? "Выход..." : "Выйти"}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl hover-elevate"
-                    onClick={() => window.location.href = '/api/login'}
-                    data-testid="button-login"
-                  >
-                    <LogIn className="w-5 h-5" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl hover-elevate"
+                      onClick={() => setLocation('/login')}
+                      data-testid="button-login"
+                    >
+                      <LogIn className="w-5 h-5" />
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="hidden md:flex items-center gap-2 rounded-xl"
+                      onClick={() => setLocation('/register')}
+                      data-testid="button-register"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      <span>Регистрация</span>
+                    </Button>
+                  </div>
                 )}
               </>
             )}

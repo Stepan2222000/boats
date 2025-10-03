@@ -11,6 +11,8 @@ import EditListingPage from "@/pages/EditListingPage";
 import SearchResultsPage from "@/pages/SearchResultsPage";
 import AdminPage from "@/pages/AdminPage";
 import ProfilePage from "@/pages/ProfilePage";
+import RegisterPage from "@/pages/RegisterPage";
+import LoginPage from "@/pages/LoginPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +26,8 @@ function Router() {
       <Route path="/search" component={SearchResultsPage} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/profile" component={ProfilePage} />
+      <Route path="/register" component={RegisterPage} />
+      <Route path="/login" component={LoginPage} />
       <Route component={NotFound} />
     </Switch>
   );
