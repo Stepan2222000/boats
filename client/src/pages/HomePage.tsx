@@ -1,31 +1,51 @@
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import Header from "@/components/Header";
 import HeroSearch from "@/components/HeroSearch";
 import BoatCard from "@/components/BoatCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { TrendingUp, Shield, Users, Sparkles, Anchor, MessageCircle, Settings } from "lucide-react";
 import type { Boat } from "@shared/schema";
 
 export default function HomePage() {
   const [, setLocation] = useLocation();
+  const [showAdminDialog, setShowAdminDialog] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
   const { data: boats, isLoading } = useQuery<Boat[]>({
     queryKey: ["/api/boats"],
   });
 
   const handleAdminAccess = () => {
-    const username = prompt("Логин:");
-    if (username === null) return;
-    
-    const password = prompt("Пароль:");
-    if (password === null) return;
-    
+    setShowAdminDialog(true);
+    setUsername("");
+    setPassword("");
+    setError("");
+  };
+
+  const handleAdminLogin = () => {
     if (username === "root" && password === "root") {
+      setShowAdminDialog(false);
       setLocation("/admin");
     } else {
-      alert("Неверный логин или пароль");
+      setError("Неверный логин или пароль");
     }
   };
 
@@ -383,6 +403,68 @@ export default function HomePage() {
           </svg>
         </div>
       </footer>
+
+      {/* Admin Login Dialog */}
+      <AlertDialog open={showAdminDialog} onOpenChange={setShowAdminDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-primary" />
+              Вход в админ-панель
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Введите учетные данные для доступа к панели управления
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="admin-username">Логин</Label>
+              <Input
+                id="admin-username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Введите логин"
+                data-testid="input-admin-username"
+                onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="admin-password">Пароль</Label>
+              <Input
+                id="admin-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Введите пароль"
+                data-testid="input-admin-password"
+                onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
+              />
+            </div>
+            
+            {error && (
+              <p className="text-sm text-destructive" data-testid="text-admin-error">
+                {error}
+              </p>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-admin-cancel">Отмена</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                handleAdminLogin();
+              }}
+              data-testid="button-admin-login"
+            >
+              Войти
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
