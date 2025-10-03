@@ -67,17 +67,17 @@ export default function HomePage() {
       <Header />
       <HeroSearch />
 
-      <section className="max-w-7xl mx-auto px-4 py-20">
-        <div className="flex items-center gap-4 mb-10">
-          <div className="h-1 w-16 bg-gradient-to-r from-primary to-blue-600 rounded-full"></div>
-          <h2 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">Часто ищут</h2>
+      <section className="max-w-7xl mx-auto px-4 py-12 md:py-20">
+        <div className="flex items-center gap-3 md:gap-4 mb-8 md:mb-10">
+          <div className="h-0.5 md:h-1 w-12 md:w-16 bg-gradient-to-r from-primary to-blue-600 rounded-full"></div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">Часто ищут</h2>
         </div>
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-3 md:gap-4">
           {popularSearches.map((search, idx) => (
             <Badge
               key={search}
               variant="secondary"
-              className="relative text-lg py-4 px-8 cursor-pointer hover-elevate font-bold border-2 border-border/40 hover:border-primary/40 transition-all duration-300 rounded-2xl bg-background/60 backdrop-blur-sm overflow-hidden group"
+              className="relative text-sm md:text-lg py-2 md:py-4 px-4 md:px-8 cursor-pointer hover-elevate font-bold border border-border/40 hover:border-primary/40 transition-all duration-300 rounded-xl md:rounded-2xl bg-background/60 backdrop-blur-sm overflow-hidden group"
               data-testid={`badge-popular-${search}`}
               style={{ animationDelay: `${idx * 50}ms` }}
             >
@@ -88,17 +88,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-4 py-20">
-        <div className="flex items-center justify-between mb-12">
-          <div>
-            <div className="flex items-center gap-4 mb-4">
-              <div className="h-1 w-16 bg-gradient-to-r from-primary to-blue-600 rounded-full"></div>
-              <h2 className="text-4xl md:text-6xl font-black bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">Рекомендуемые объявления</h2>
+      <section className="max-w-7xl mx-auto px-4 py-12 md:py-20">
+        <div className="flex items-center justify-between mb-8 md:mb-12">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
+              <div className="h-0.5 md:h-1 w-12 md:w-16 bg-gradient-to-r from-primary to-blue-600 rounded-full"></div>
+              <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent leading-tight">Рекомендуемые</h2>
             </div>
-            <p className="text-xl text-muted-foreground font-medium ml-20">Лучшие предложения, подобранные специально для вас с помощью AI</p>
+            <p className="text-sm md:text-xl text-muted-foreground font-medium ml-14 md:ml-20">Подобрано AI специально для вас</p>
           </div>
           <Link href="/catalog">
-            <Button variant="outline" size="lg" className="hidden md:flex border-2 hover:border-primary/40 px-8 py-6 text-lg font-bold rounded-xl" data-testid="button-view-all">
+            <Button variant="outline" size="lg" className="hidden lg:flex border-2 hover:border-primary/40 px-8 py-6 text-lg font-bold rounded-xl" data-testid="button-view-all">
               Смотреть все
             </Button>
           </Link>
@@ -117,7 +117,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative py-40 overflow-hidden">
+      <section className="relative py-16 md:py-40 overflow-hidden">
         {/* Complex multi-layer background */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-blue-500/5 to-primary/10"></div>
         <div className="absolute inset-0">
@@ -127,28 +127,28 @@ export default function HomePage() {
         </div>
         
         {/* Decorative lines */}
-        <div className="absolute top-20 left-0 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
-        <div className="absolute bottom-20 left-0 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+        <div className="absolute top-10 md:top-20 left-0 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+        <div className="absolute bottom-10 md:bottom-20 left-0 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
         
         <div className="relative max-w-7xl mx-auto px-4">
-          <div className="text-center mb-24">
-            <div className="relative inline-block mb-8">
+          <div className="text-center mb-12 md:mb-24">
+            <div className="relative inline-block mb-6 md:mb-8">
               <div className="absolute -inset-2 bg-gradient-to-r from-primary via-blue-600 to-primary rounded-full blur-xl opacity-40 animate-glow"></div>
-              <Badge className="relative bg-gradient-to-r from-primary via-blue-600 to-primary text-primary-foreground border-0 px-8 py-4 text-lg font-black shadow-2xl overflow-hidden">
+              <Badge className="relative bg-gradient-to-r from-primary via-blue-600 to-primary text-primary-foreground border-0 px-5 md:px-8 py-2 md:py-4 text-sm md:text-lg font-black shadow-2xl overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
                 <span className="relative z-10">Лидер рынка</span>
               </Badge>
             </div>
             
-            <div className="flex items-center justify-center gap-6 mb-8">
-              <div className="h-px w-24 bg-gradient-to-r from-transparent to-primary"></div>
-              <h2 className="text-5xl md:text-6xl lg:text-7xl font-black bg-gradient-to-r from-foreground via-foreground/90 to-foreground/60 bg-clip-text text-transparent">
-                Почему выбирают Boat
+            <div className="flex items-center justify-center gap-3 md:gap-6 mb-6 md:mb-8 px-4">
+              <div className="h-px w-12 md:w-24 bg-gradient-to-r from-transparent to-primary"></div>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black bg-gradient-to-r from-foreground via-foreground/90 to-foreground/60 bg-clip-text text-transparent">
+                Почему Boat
               </h2>
-              <div className="h-px w-24 bg-gradient-to-l from-transparent to-primary"></div>
+              <div className="h-px w-12 md:w-24 bg-gradient-to-l from-transparent to-primary"></div>
             </div>
             
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto font-semibold">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto font-semibold px-4">
               Самая современная платформа для покупки и продажи водной техники в России и СНГ
             </p>
           </div>
@@ -250,7 +250,7 @@ export default function HomePage() {
         <div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-primary/20 rounded-full blur-sm animate-particle-float" style={{ animationDelay: '4s' }}></div>
         
         <div className="relative max-w-7xl mx-auto px-4 py-20">
-          <div className="grid md:grid-cols-4 gap-16 mb-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-16 mb-12 md:mb-16">
             {/* Company Info */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-3 mb-6 group">

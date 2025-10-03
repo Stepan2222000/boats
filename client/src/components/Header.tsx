@@ -24,31 +24,31 @@ export default function Header() {
       {/* Subtle top highlight */}
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
       
-      <div className="relative max-w-7xl mx-auto px-4 py-5">
-        <div className="flex items-center justify-between gap-4">
+      <div className="relative max-w-7xl mx-auto px-3 md:px-4 py-3 md:py-5">
+        <div className="flex items-center justify-between gap-2 md:gap-4">
           <Link href="/">
-            <a className="flex items-center gap-3 group" data-testid="link-home">
+            <a className="flex items-center gap-2 md:gap-3 group" data-testid="link-home">
               {/* Enhanced logo with anchor */}
               <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-br from-primary/30 to-blue-600/30 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                <div className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-blue-600 to-primary text-primary-foreground shadow-2xl transition-all duration-500 group-hover:scale-110 overflow-hidden">
+                <div className="absolute -inset-1 bg-gradient-to-br from-primary/30 to-blue-600/30 rounded-xl md:rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+                <div className="relative flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary via-blue-600 to-primary text-primary-foreground shadow-2xl transition-all duration-500 group-hover:scale-110 overflow-hidden">
                   {/* Shimmer effect */}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
                   
                   {/* Anchor icon */}
-                  <Anchor className="w-8 h-8 relative z-10" />
+                  <Anchor className="w-6 h-6 md:w-8 md:h-8 relative z-10" />
                   
                   {/* Background waves */}
-                  <Waves className="absolute bottom-1 left-1/2 -translate-x-1/2 w-10 h-10 opacity-20" />
+                  <Waves className="absolute bottom-1 left-1/2 -translate-x-1/2 w-8 h-8 md:w-10 md:h-10 opacity-20" />
                 </div>
               </div>
               
               <div className="hidden sm:block">
                 <div className="flex items-center gap-2">
-                  <span className="font-black text-3xl bg-gradient-to-r from-primary via-blue-600 to-primary bg-clip-text text-transparent animate-gradient-shift">Boat</span>
-                  <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                  <span className="font-black text-xl md:text-3xl bg-gradient-to-r from-primary via-blue-600 to-primary bg-clip-text text-transparent animate-gradient-shift">Boat</span>
+                  <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-primary animate-pulse" />
                 </div>
-                <div className="text-sm text-muted-foreground font-bold -mt-1 tracking-wide">⚓ Морская площадка</div>
+                <div className="text-xs md:text-sm text-muted-foreground font-bold -mt-1 tracking-wide">⚓ Морская площадка</div>
               </div>
             </a>
           </Link>
@@ -111,7 +111,7 @@ export default function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="w-11 h-11 rounded-xl hover-elevate"
+              className="w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl hover-elevate"
               data-testid="button-profile"
             >
               <User className="w-5 h-5" />
@@ -119,7 +119,7 @@ export default function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden w-11 h-11 rounded-xl"
+              className="md:hidden w-10 h-10 rounded-lg"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               data-testid="button-menu"
             >
@@ -130,13 +130,13 @@ export default function Header() {
 
         <div className="md:hidden mt-3">
           <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Поиск..."
+              placeholder="Поиск катеров и яхт..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-full"
+              className="pl-10 w-full h-10 text-sm rounded-lg"
               data-testid="input-search-mobile"
             />
           </div>
