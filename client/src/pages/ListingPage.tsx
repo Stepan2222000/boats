@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Eye, Trash2, MapPin, Calendar, Ruler, Package } from "lucide-react";
+import { Edit, Eye, Trash2, MapPin, Calendar, Ruler, Package, Phone, MessageCircle, Send } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -247,15 +247,26 @@ export default function ListingPage() {
             )}
 
             {/* Contact */}
-            {boat.phone && (
+            {(boat.contactPhone || boat.phone) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Контакты</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Button className="w-full" data-testid="button-contact">
-                    {boat.phone}
-                  </Button>
+                  {boat.contactPhone && (
+                    <Button className="w-full gap-2" data-testid="button-contact">
+                      {boat.contactType === 'whatsapp' && <MessageCircle className="w-4 h-4" />}
+                      {boat.contactType === 'telegram' && <Send className="w-4 h-4" />}
+                      {boat.contactType === 'phone' && <Phone className="w-4 h-4" />}
+                      {boat.contactPhone}
+                    </Button>
+                  )}
+                  {!boat.contactPhone && boat.phone && (
+                    <Button className="w-full gap-2" data-testid="button-contact">
+                      <Phone className="w-4 h-4" />
+                      {boat.phone}
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             )}
