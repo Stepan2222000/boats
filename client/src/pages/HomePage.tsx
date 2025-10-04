@@ -356,6 +356,11 @@ export default function HomePage() {
                 <a href="#" className="text-muted-foreground hover:text-primary transition-colors font-medium">
                   Условия использования
                 </a>
+                <Link href="/admin">
+                  <button className="text-xs text-muted-foreground/40 hover:text-primary/60 transition-colors font-medium" data-testid="link-admin-footer">
+                    Админ
+                  </button>
+                </Link>
               </div>
             </div>
           </div>

@@ -24,7 +24,7 @@ async function isAdmin(req: any, res: any, next: any) {
   
   try {
     const user = await storage.getUser(req.session.userId);
-    if (!user || user.phone !== "+79999999999") {
+    if (!user || user.phone !== "root") {
       return res.status(403).json({ message: "Доступ запрещен. Требуются права администратора" });
     }
     next();
@@ -46,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const normalizedPhone = result.data.phone.replace(/\s+/g, '').trim();
-      if (normalizedPhone === "+79999999999") {
+      if (normalizedPhone === "root") {
         return res.status(403).json({ message: "Этот номер телефона зарезервирован" });
       }
 
