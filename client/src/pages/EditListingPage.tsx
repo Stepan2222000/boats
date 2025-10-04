@@ -70,9 +70,9 @@ export default function EditListingPage() {
         description: "Пожалуйста, войдите чтобы редактировать объявление.",
         variant: "destructive",
       });
-      window.location.href = '/api/login';
+      setLocation('/login');
     }
-  }, [isAuthenticated, hasRedirected, toast]);
+  }, [isAuthenticated, hasRedirected, toast, setLocation]);
 
   useEffect(() => {
     if (boat) {
