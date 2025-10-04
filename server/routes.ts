@@ -417,26 +417,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const userId = req.session?.userId || null;
 
-      const aiResult = await generateListingWithWebSearch({
-        rawDescription: result.data.rawDescription,
-        extractedData: result.data.extractedData,
-        photoUrls: result.data.photoUrls,
-      });
+      // Создаем объявление сразу с базовой информацией
+      const manufacturer = result.data.extractedData.manufacturer;
+      const model = result.data.extractedData.model;
+      const year = result.data.extractedData.year;
+      
+      const basicTitle = manufacturer && model 
+        ? `${manufacturer} ${model} ${year}`
+        : `Лодка ${year} года`;
 
-      const boatData = {
+      const boatData: any = {
         userId,
-        title: aiResult.title,
-        description: aiResult.description,
+        title: basicTitle,
+        description: result.data.rawDescription,
         originalDescription: result.data.rawDescription,
         status: "pending_moderation" as const,
         price: result.data.extractedData.price,
         currency: "₽" as const,
         year: result.data.extractedData.year,
-        location: aiResult.location || "Не указано",
-        manufacturer: aiResult.manufacturer,
-        model: aiResult.model,
-        boatType: aiResult.boatType,
-        length: aiResult.length,
+        location: "Не указано",
+        manufacturer: result.data.extractedData.manufacturer,
+        model: result.data.extractedData.model,
         photoCount: result.data.photoUrls.length,
         photoUrls: result.data.photoUrls,
         isPromoted: false,
@@ -457,6 +458,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Запускаем AI обработку в фоне (не блокируем ответ)
+      generateListingWithWebSearch({
+        rawDescription: result.data.rawDescription,
+        extractedData: result.data.extractedData,
+        photoUrls: result.data.photoUrls,
+      })
+        .then(async (aiResult) => {
+          // Обновляем объявление с AI результатами
+          await storage.updateBoat(boat.id, {
+            title: aiResult.title,
+            description: aiResult.description,
+            location: aiResult.location || boatData.location,
+            manufacturer: aiResult.manufacturer || boatData.manufacturer,
+            model: aiResult.model || boatData.model,
+            boatType: aiResult.boatType,
+            length: aiResult.length,
+          });
+          console.log(`AI processing completed for boat ${boat.id}`);
+        })
+        .catch((error) => {
+          console.error(`AI processing failed for boat ${boat.id}:`, error);
+          // Не падаем - объявление уже создано
+        });
+
+      // Сразу возвращаем успех
       res.status(201).json({ boat });
     } catch (error: any) {
       console.error("Create with contacts error:", error);

@@ -115,11 +115,6 @@ export default function CreateListingPage() {
 
   const createMutation = useMutation({
     mutationFn: async (contactData: ContactFormValues) => {
-      toast({
-        title: "Создаем объявление...",
-        description: "AI обрабатывает ваше объявление. Это займет несколько секунд.",
-      });
-      
       const contacts = [];
       contacts.push({ contactType: "phone", contactValue: contactData.phone });
       
@@ -162,8 +157,8 @@ export default function CreateListingPage() {
       
       queryClient.invalidateQueries({ queryKey: ["/api/boats"] });
       toast({
-        title: "Объявление отправлено!",
-        description: "AI создал объявление и отправил на модерацию. Ожидайте проверки администратором.",
+        title: "Объявление создано!",
+        description: "Запрос на создание отправлен AI. Объявление будет обработано и отправлено на модерацию.",
       });
       setLocation("/");
     },
