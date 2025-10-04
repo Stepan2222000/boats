@@ -200,6 +200,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         manufacturer: z.string().optional(),
         model: z.string().optional(),
         length: z.coerce.number().positive("Length must be positive").optional(),
+        contactType: z.enum(["phone", "whatsapp", "telegram"]).default("phone"),
+        contactPhone: z.string().regex(/^\+7\d{10}$/, "Phone must be in format +7XXXXXXXXXX"),
       });
 
       const inputResult = aiInputSchema.safeParse(req.body);
@@ -234,6 +236,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         photoCount: req.body.photoUrls?.length || 0,
         photoUrls: req.body.photoUrls || [],
         isPromoted: false,
+        contactType: inputResult.data.contactType,
+        contactPhone: inputResult.data.contactPhone,
       };
 
       const validationResult = insertBoatSchema.safeParse(boatData);
