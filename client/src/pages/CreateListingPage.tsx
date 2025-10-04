@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -10,96 +10,93 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Sparkles, Loader2, Image as ImageIcon, X } from "lucide-react";
+import { queryClient } from "@/lib/queryClient";
+import { Sparkles, Loader2, Image as ImageIcon, X, Phone, MessageCircle, Send } from "lucide-react";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
-import { useAuth } from "@/hooks/useAuth";
 
-const listingFormSchema = z.object({
-  rawDescription: z.string().min(10, "Опишите вашу лодку хотя бы в нескольких словах"),
-  price: z.coerce.number().positive("Цена должна быть больше нуля"),
-  year: z.coerce.number()
-    .int("Год должен быть целым числом")
-    .min(1900, "Год должен быть не раньше 1900")
-    .max(new Date().getFullYear() + 1, "Год не может быть в будущем"),
-  location: z.string().min(2, "Укажите местоположение"),
-  manufacturer: z.string().optional(),
-  model: z.string().optional(),
-  length: z.coerce.number().positive("Длина должна быть больше нуля").optional(),
-  contactType: z.enum(["phone", "whatsapp", "telegram"]).default("phone"),
-  contactPhone: z.string().regex(/^\+7\d{10}$/, "Номер телефона должен быть в формате +7XXXXXXXXXX"),
+const descriptionFormSchema = z.object({
+  description: z.string().min(50, "Опишите вашу лодку подробнее (минимум 50 символов)"),
 });
 
-type ListingFormValues = z.infer<typeof listingFormSchema>;
+const contactFormSchema = z.object({
+  phone: z.string().regex(/^\+7\d{10}$/, "Номер телефона должен быть в формате +7XXXXXXXXXX"),
+  whatsappEnabled: z.boolean(),
+  whatsappPhone: z.string().optional(),
+  telegramEnabled: z.boolean(),
+  telegramUsername: z.string().optional(),
+  inAppChatEnabled: z.boolean(),
+}).refine(
+  (data) => !data.whatsappEnabled || (data.whatsappPhone && data.whatsappPhone.length > 0),
+  { message: "Укажите номер телефона для WhatsApp", path: ["whatsappPhone"] }
+).refine(
+  (data) => !data.telegramEnabled || (data.telegramUsername && data.telegramUsername.length > 0),
+  { message: "Укажите username или номер для Telegram", path: ["telegramUsername"] }
+);
+
+type DescriptionFormValues = z.infer<typeof descriptionFormSchema>;
+type ContactFormValues = z.infer<typeof contactFormSchema>;
 
 export default function CreateListingPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { user, isLoading, isAuthenticated } = useAuth();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [step, setStep] = useState<"description" | "contacts" | "generating">("description");
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<Record<string, string>>({});
   const fileIdToNormalizedPathRef = useRef<Record<string, string>>({});
-  const [hasRedirected, setHasRedirected] = useState(false);
+  const [validationData, setValidationData] = useState<any>(null);
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated && !hasRedirected) {
-      setHasRedirected(true);
-      toast({
-        title: "Требуется авторизация",
-        description: "Пожалуйста, войдите чтобы разместить объявление.",
-        variant: "destructive",
-      });
-      setLocation('/login');
-    }
-  }, [isLoading, isAuthenticated, hasRedirected, toast, setLocation]);
-
-  const form = useForm<ListingFormValues>({
-    resolver: zodResolver(listingFormSchema),
+  const descriptionForm = useForm<DescriptionFormValues>({
+    resolver: zodResolver(descriptionFormSchema),
     defaultValues: {
-      rawDescription: "",
-      price: undefined,
-      year: undefined,
-      location: "",
-      manufacturer: "",
-      model: "",
-      length: undefined,
-      contactType: "phone" as const,
-      contactPhone: user?.phone || "",
+      description: "",
     },
   });
 
-  const createMutation = useMutation({
-    mutationFn: async (data: ListingFormValues) => {
-      setIsProcessing(true);
-      const response = await fetch("/api/boats/ai-create", {
+  const contactForm = useForm<ContactFormValues>({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: {
+      phone: "",
+      whatsappEnabled: false,
+      whatsappPhone: "",
+      telegramEnabled: false,
+      telegramUsername: "",
+      inAppChatEnabled: false,
+    },
+  });
+
+  const validateMutation = useMutation({
+    mutationFn: async (data: DescriptionFormValues) => {
+      const response = await fetch("/api/boats/validate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...data,
-          photoUrls,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: data.description }),
       });
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to create listing");
+        throw new Error(error.error || "Ошибка валидации");
       }
       
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/boats"] });
-      toast({
-        title: "Объявление создано!",
-        description: "Ваше объявление успешно опубликовано.",
-      });
-      setLocation("/");
+    onSuccess: (data) => {
+      if (data.isValid) {
+        setValidationData(data.extractedData);
+        setStep("contacts");
+        toast({
+          title: "Отлично!",
+          description: "Все необходимые данные найдены. Теперь укажите контакты.",
+        });
+      } else {
+        toast({
+          title: "Недостаточно информации",
+          description: `Пожалуйста, укажите: ${data.missingFields.join(", ")}`,
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -108,151 +105,159 @@ export default function CreateListingPage() {
         variant: "destructive",
       });
     },
-    onSettled: () => {
-      setIsProcessing(false);
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (contactData: ContactFormValues) => {
+      setStep("generating");
+      
+      const contacts = [];
+      contacts.push({ contactType: "phone", contactValue: contactData.phone });
+      
+      if (contactData.whatsappEnabled && contactData.whatsappPhone) {
+        contacts.push({ contactType: "whatsapp", contactValue: contactData.whatsappPhone });
+      }
+      
+      if (contactData.telegramEnabled && contactData.telegramUsername) {
+        contacts.push({ contactType: "telegram", contactValue: contactData.telegramUsername });
+      }
+      
+      if (contactData.inAppChatEnabled) {
+        contacts.push({ contactType: "in_app_chat", contactValue: contactData.phone });
+      }
+
+      const response = await fetch("/api/boats/create-with-contacts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rawDescription: descriptionForm.getValues("description"),
+          extractedData: validationData,
+          photoUrls,
+          contacts,
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Не удалось создать объявление");
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      const boatId = data.boat.id;
+      localStorage.setItem("myListings", JSON.stringify([
+        ...(JSON.parse(localStorage.getItem("myListings") || "[]")),
+        { localId: crypto.randomUUID(), boatId, status: "pending_moderation", canEdit: true }
+      ]));
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/boats"] });
+      toast({
+        title: "Объявление отправлено на модерацию!",
+        description: "Ваше объявление будет проверено администратором и опубликовано.",
+      });
+      setLocation("/");
+    },
+    onError: (error: Error) => {
+      setStep("contacts");
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
-  const onSubmit = (data: ListingFormValues) => {
-    createMutation.mutate(data);
-  };
-
   const handleGetUploadParameters = async (file: any) => {
-    const response = await fetch("/api/objects/upload", {
-      method: "POST",
-    });
+    const response = await fetch("/api/objects/upload", { method: "POST" });
     const data = await response.json();
     
     fileIdToNormalizedPathRef.current[file.id] = data.normalizedPath;
     
     return {
       method: "PUT" as const,
-      url: data.uploadURL,
+      url: data.uploadURL as string,
+      headers: { "Content-Type": file.type },
     };
   };
 
-  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    if (!result.successful || result.successful.length === 0) {
-      return;
-    }
+  const handleUploadComplete = async (result: UploadResult<any, any>) => {
+    if (!result.successful || result.successful.length === 0) return;
     
     const normalizedPaths = result.successful
-      .map((file) => {
-        const normalizedPath = fileIdToNormalizedPathRef.current[file.id];
-        return normalizedPath || null;
-      })
-      .filter((url): url is string => url !== null && url.startsWith('/objects/'));
-    
-    if (normalizedPaths.length > 0) {
-      const remainingSlots = 30 - photoUrls.length;
-      const pathsToAdd = normalizedPaths.slice(0, remainingSlots);
-      
-      setPhotoUrls((prev) => [...prev, ...pathsToAdd]);
-      
-      const newPreviewUrls: Record<string, string> = {};
-      await Promise.all(
-        pathsToAdd.map(async (path) => {
-          try {
-            const response = await fetch("/api/objects/download-url", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ objectPath: path }),
-            });
-            if (response.ok) {
-              const data = await response.json();
-              newPreviewUrls[path] = data.downloadURL;
-            }
-          } catch (error) {
-            console.error("Error getting download URL:", error);
-          }
-        })
-      );
-      
-      setPhotoPreviewUrls((prev) => ({ ...prev, ...newPreviewUrls }));
-      
-      toast({
-        title: "Фотографии загружены",
-        description: `Загружено ${pathsToAdd.length} фото`,
+      .map((file: any) => fileIdToNormalizedPathRef.current[file.id])
+      .filter(Boolean) as string[];
+
+    const previewRequests = normalizedPaths.map(async (path: string) => {
+      const response = await fetch("/api/objects/download-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ objectPath: path }),
       });
-    } else {
-      toast({
-        title: "Ошибка загрузки",
-        description: "Не удалось обработать загруженные фото",
-        variant: "destructive",
-      });
-    }
+      const data = await response.json();
+      return { path, url: data.downloadUrl };
+    });
+
+    const previews = await Promise.all(previewRequests);
+    const newPhotoPreviewUrls: Record<string, string> = {};
+    previews.forEach(({ path, url }: { path: string; url: string }) => {
+      newPhotoPreviewUrls[path] = url;
+    });
+
+    setPhotoUrls(prev => [...prev, ...normalizedPaths]);
+    setPhotoPreviewUrls(prev => ({ ...prev, ...newPhotoPreviewUrls }));
+
+    toast({
+      title: "Фото загружены",
+      description: `Загружено ${result.successful.length} фото`,
+    });
   };
 
-  const removePhoto = (index: number) => {
-    const urlToRemove = photoUrls[index];
-    setPhotoUrls((prev) => prev.filter((_, i) => i !== index));
-    setPhotoPreviewUrls((prev) => {
-      const newUrls = { ...prev };
-      delete newUrls[urlToRemove];
-      return newUrls;
+  const handleRemovePhoto = (photoUrl: string) => {
+    setPhotoUrls(prev => prev.filter(url => url !== photoUrl));
+    setPhotoPreviewUrls(prev => {
+      const newPreviews = { ...prev };
+      delete newPreviews[photoUrl];
+      return newPreviews;
     });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <Header />
       
-      <div className="max-w-4xl mx-auto px-4 py-8 md:py-12">
-        <Card className="border-2 border-blue-200 bg-white shadow-lg hover-elevate">
-          <CardHeader className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 flex items-center justify-center shadow-md">
-                <Sparkles className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-3xl font-black text-gray-900">
-                  Создать объявление
-                </CardTitle>
-                <CardDescription className="text-base mt-2 text-gray-600">
-                  AI поможет создать идеальное описание для вашей лодки
-                </CardDescription>
-              </div>
-            </div>
+      <main className="container max-w-4xl mx-auto px-4 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-gray-900">
+              Разместить объявление
+            </CardTitle>
+            <CardDescription>
+              {step === "description" && "Опишите вашу лодку подробно, включая цену, год, производителя и модель"}
+              {step === "contacts" && "Укажите контактную информацию"}
+              {step === "generating" && "Генерируем профессиональное объявление..."}
+            </CardDescription>
           </CardHeader>
           
           <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="rawDescription"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-bold text-gray-900">Описание вашей лодки</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Например: Продаю катер в отличном состоянии, вместительная каюта с удобствами, новая электроника и навигация, экономичный двигатель..."
-                          className="min-h-32 text-base bg-white border-blue-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500"
-                          data-testid="input-description"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {step === "description" && (
+              <Form {...descriptionForm}>
+                <form onSubmit={descriptionForm.handleSubmit((data) => validateMutation.mutate(data))} className="space-y-6">
                   <FormField
-                    control={form.control}
-                    name="price"
+                    control={descriptionForm.control}
+                    name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-bold text-gray-900">Цена (₽)</FormLabel>
+                        <FormLabel className="text-base font-bold text-gray-900">
+                          Описание вашей лодки
+                        </FormLabel>
                         <FormControl>
-                          <Input
+                          <Textarea
                             {...field}
-                            type="number"
-                            placeholder="3490000"
-                            className="text-base bg-white border-blue-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500"
-                            data-testid="input-price"
+                            rows={8}
+                            placeholder="Продаю Sea Ray 320 Sundancer 2015 года за 3 500 000₽. Длина 9.8м, находится в Краснодаре. Два двигателя Mercruiser 8.2L, круиз-контроль, автопилот, GPS, эхолот. Каюта с кондиционером, камбуз, санузел. В отличном состоянии, все ТО пройдены."
+                            className="text-base bg-white border-blue-300 text-gray-900 placeholder:text-gray-400"
+                            data-testid="textarea-description"
                           />
                         </FormControl>
                         <FormMessage />
@@ -260,238 +265,245 @@ export default function CreateListingPage() {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="year"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-bold text-gray-900">Год выпуска</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="number"
-                            placeholder="2015"
-                            className="text-base bg-white border-blue-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500"
-                            data-testid="input-year"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-bold text-gray-900">Местоположение</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Краснодар"
-                            className="text-base bg-white border-blue-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500"
-                            data-testid="input-location"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="length"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-bold text-gray-900">Длина (м)</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="number"
-                            step="0.1"
-                            placeholder="9.8"
-                            className="text-base bg-white border-blue-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500"
-                            data-testid="input-length"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="manufacturer"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-bold text-gray-900">Производитель (опционально)</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Sea Ray"
-                            className="text-base bg-white border-blue-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500"
-                            data-testid="input-manufacturer"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="model"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-bold text-gray-900">Модель (опционально)</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="320 Sundancer"
-                            className="text-base bg-white border-blue-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500"
-                            data-testid="input-model"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="contactType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-bold text-gray-900">Тип связи</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="bg-white border-blue-300 text-gray-900" data-testid="select-contact-type">
-                              <SelectValue placeholder="Выберите тип связи" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="phone">Телефон</SelectItem>
-                            <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                            <SelectItem value="telegram">Telegram</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="contactPhone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-bold text-gray-900">Контактный телефон</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="+79991234567"
-                            className="text-base bg-white border-blue-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500"
-                            data-testid="input-contact-phone"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Photo Upload Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="space-y-4">
                     <div>
-                      <h3 className="text-base font-bold text-gray-900">Фотографии</h3>
-                      <p className="text-sm text-gray-600">Добавьте фото вашей лодки (до 30 фото)</p>
+                      <h3 className="text-base font-bold text-gray-900 mb-2">
+                        Фотографии (до 30 фото)
+                      </h3>
+                      <ObjectUploader
+                        maxNumberOfFiles={30}
+                        maxFileSize={10485760}
+                        onGetUploadParameters={handleGetUploadParameters}
+                        onComplete={handleUploadComplete}
+                        buttonVariant="outline"
+                      >
+                        <ImageIcon className="w-4 h-4 mr-2" />
+                        Загрузить фото
+                      </ObjectUploader>
                     </div>
-                    <ObjectUploader
-                      maxNumberOfFiles={30}
-                      maxFileSize={10485760}
-                      onGetUploadParameters={handleGetUploadParameters}
-                      onComplete={handleUploadComplete}
-                      buttonVariant="outline"
-                    >
-                      <ImageIcon className="w-4 h-4 mr-2" />
-                      Загрузить фото
-                    </ObjectUploader>
-                  </div>
 
-                  {photoUrls.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {photoUrls.map((url, index) => {
-                        const previewUrl = photoPreviewUrls[url];
-                        return (
-                          <div key={index} className="relative group aspect-square rounded-lg overflow-hidden bg-gray-50 border-2 border-blue-200 shadow-md hover:shadow-lg transition-shadow">
-                            {previewUrl ? (
-                              <img
-                                src={previewUrl}
-                                alt={`Фото ${index + 1}`}
-                                className="w-full h-full object-cover"
-                                data-testid={`img-photo-${index}`}
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-                              </div>
-                            )}
+                    {photoUrls.length > 0 && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                        {photoUrls.map((url, index) => (
+                          <div key={url} className="relative group">
+                            <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-blue-200">
+                              {photoPreviewUrls[url] ? (
+                                <img
+                                  src={photoPreviewUrls[url]}
+                                  alt={`Фото ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="absolute top-1 left-1 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">
+                              {index + 1}
+                            </div>
                             <button
                               type="button"
-                              onClick={() => removePhoto(index)}
-                              className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg"
+                              onClick={() => handleRemovePhoto(url)}
+                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
                               data-testid={`button-remove-photo-${index}`}
                             >
                               <X className="w-4 h-4" />
                             </button>
-                            <div className="absolute bottom-2 left-2 bg-blue-600 px-2 py-1 rounded text-xs font-bold text-white shadow-md">
-                              {index + 1}
-                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-                <div className="flex gap-4 pt-4">
                   <Button
                     type="submit"
-                    size="lg"
-                    disabled={isProcessing}
-                    className="flex-1 text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md"
-                    data-testid="button-create-listing"
+                    disabled={validateMutation.isPending}
+                    className="w-full gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                    data-testid="button-generate"
                   >
-                    {isProcessing ? (
+                    {validateMutation.isPending ? (
                       <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        AI обрабатывает...
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Проверка...
                       </>
                     ) : (
                       <>
-                        <Sparkles className="mr-2 h-5 w-5" />
-                        Создать объявление
+                        <Sparkles className="w-5 h-5" />
+                        Сгенерировать объявление
                       </>
                     )}
                   </Button>
-                  <Button
-                    type="button"
-                    size="lg"
-                    variant="outline"
-                    onClick={() => setLocation("/")}
-                    className="text-lg font-bold border-blue-400 text-blue-700 hover:bg-blue-50"
-                    data-testid="button-cancel"
-                  >
-                    Отмена
-                  </Button>
-                </div>
-              </form>
-            </Form>
+                </form>
+              </Form>
+            )}
+
+            {step === "contacts" && (
+              <Form {...contactForm}>
+                <form onSubmit={contactForm.handleSubmit((data) => createMutation.mutate(data))} className="space-y-6">
+                  <FormField
+                    control={contactForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-bold text-gray-900">
+                          Контактный телефон (обязательно)
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="+79991234567"
+                            className="text-base bg-white border-blue-300"
+                            data-testid="input-phone"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="space-y-4">
+                    <h3 className="text-base font-bold text-gray-900">Дополнительные способы связи</h3>
+                    
+                    <FormField
+                      control={contactForm.control}
+                      name="whatsappEnabled"
+                      render={({ field }) => (
+                        <div className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg">
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-whatsapp"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <MessageCircle className="w-4 h-4 text-green-600" />
+                              <label className="font-medium text-gray-900">WhatsApp</label>
+                            </div>
+                            {field.value && (
+                              <FormField
+                                control={contactForm.control}
+                                name="whatsappPhone"
+                                render={({ field: innerField }) => (
+                                  <Input
+                                    {...innerField}
+                                    placeholder="+79991234567"
+                                    className="mt-2"
+                                    data-testid="input-whatsapp-phone"
+                                  />
+                                )}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    />
+
+                    <FormField
+                      control={contactForm.control}
+                      name="telegramEnabled"
+                      render={({ field }) => (
+                        <div className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg">
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-telegram"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <Send className="w-4 h-4 text-blue-500" />
+                              <label className="font-medium text-gray-900">Telegram</label>
+                            </div>
+                            {field.value && (
+                              <FormField
+                                control={contactForm.control}
+                                name="telegramUsername"
+                                render={({ field: innerField }) => (
+                                  <Input
+                                    {...innerField}
+                                    placeholder="@username или +79991234567"
+                                    className="mt-2"
+                                    data-testid="input-telegram-username"
+                                  />
+                                )}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    />
+
+                    <FormField
+                      control={contactForm.control}
+                      name="inAppChatEnabled"
+                      render={({ field }) => (
+                        <div className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg">
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-in-app-chat"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <MessageCircle className="w-4 h-4 text-blue-600" />
+                              <label className="font-medium text-gray-900">Внутренний чат</label>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Покупатели смогут написать вам прямо на сайте
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setStep("description")}
+                      className="flex-1"
+                      data-testid="button-back"
+                    >
+                      Назад
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={createMutation.isPending}
+                      className="flex-1 gap-2 bg-gradient-to-r from-blue-600 to-blue-700"
+                      data-testid="button-create"
+                    >
+                      {createMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Создание...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-5 h-5" />
+                          Создать объявление
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            )}
+
+            {step === "generating" && (
+              <div className="text-center py-12">
+                <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  Генерируем профессиональное объявление
+                </h3>
+                <p className="text-gray-600">
+                  Используем AI для поиска характеристик и создания описания...
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
-      </div>
+      </main>
     </div>
   );
 }

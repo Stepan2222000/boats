@@ -1,4 +1,4 @@
-import { type Boat, type InsertBoat, boats, type AiSetting, aiSettings, type User, type PublicUser, users } from "@shared/schema";
+import { type Boat, type InsertBoat, boats, type AiSetting, aiSettings, type User, type PublicUser, users, type BoatContact, type InsertBoatContact, boatContacts } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, or, ilike, sql } from "drizzle-orm";
 
@@ -21,6 +21,8 @@ export interface IStorage {
   updateBoat(id: string, boat: Partial<InsertBoat>): Promise<Boat | undefined>;
   deleteBoat(id: string): Promise<boolean>;
   recordView(boatId: string, userId: string | null): Promise<boolean>;
+  createBoatContact(contact: InsertBoatContact): Promise<BoatContact>;
+  getBoatContacts(boatId: string): Promise<BoatContact[]>;
   getAllAiSettings(): Promise<AiSetting[]>;
   getAiSetting(key: string): Promise<AiSetting | undefined>;
   upsertAiSetting(key: string, value: string, description?: string): Promise<AiSetting>;
@@ -62,7 +64,7 @@ export class DbStorage implements IStorage {
   }
 
   async getAllBoats(): Promise<Boat[]> {
-    return await db.select().from(boats).orderBy(desc(boats.createdAt));
+    return await db.select().from(boats).where(eq(boats.status, "approved")).orderBy(desc(boats.createdAt));
   }
 
   async searchBoats(params: {
@@ -73,17 +75,18 @@ export class DbStorage implements IStorage {
     boatType?: string;
     location?: string;
   }): Promise<Boat[]> {
-    const conditions = [];
+    const conditions = [eq(boats.status, "approved")];
 
     if (params.query) {
-      conditions.push(
-        or(
-          ilike(boats.title, `%${params.query}%`),
-          ilike(boats.description, `%${params.query}%`),
-          ilike(boats.manufacturer, `%${params.query}%`),
-          ilike(boats.model, `%${params.query}%`)
-        )
+      const searchCondition = or(
+        ilike(boats.title, `%${params.query}%`),
+        ilike(boats.description, `%${params.query}%`),
+        ilike(boats.manufacturer, `%${params.query}%`),
+        ilike(boats.model, `%${params.query}%`)
       );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
     if (params.minPrice !== undefined) {
@@ -106,15 +109,11 @@ export class DbStorage implements IStorage {
       conditions.push(ilike(boats.location, `%${params.location}%`));
     }
 
-    if (conditions.length > 0) {
-      return await db
-        .select()
-        .from(boats)
-        .where(sql`${sql.join(conditions, sql` AND `)}`)
-        .orderBy(desc(boats.isPromoted), desc(boats.createdAt));
-    }
-
-    return await db.select().from(boats).orderBy(desc(boats.isPromoted), desc(boats.createdAt));
+    return await db
+      .select()
+      .from(boats)
+      .where(sql`${sql.join(conditions, sql` AND `)}`)
+      .orderBy(desc(boats.isPromoted), desc(boats.createdAt));
   }
 
   async createBoat(insertBoat: InsertBoat): Promise<Boat> {
@@ -197,6 +196,22 @@ export class DbStorage implements IStorage {
         .returning();
       return result[0];
     }
+  }
+
+  async createBoatContact(contact: InsertBoatContact): Promise<BoatContact> {
+    const [result] = await db
+      .insert(boatContacts)
+      .values(contact)
+      .returning();
+    return result;
+  }
+
+  async getBoatContacts(boatId: string): Promise<BoatContact[]> {
+    return await db
+      .select()
+      .from(boatContacts)
+      .where(eq(boatContacts.boatId, boatId))
+      .orderBy(boatContacts.createdAt);
   }
 }
 

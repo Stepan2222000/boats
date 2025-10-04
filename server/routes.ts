@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertBoatSchema, registerUserSchema, loginUserSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
-import { generateBoatListing, interpretSearchQuery } from "./openai";
+import { generateBoatListing, interpretSearchQuery, validateDescription, generateListingWithWebSearch } from "./openai";
 import { z } from "zod";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { registerUser, loginUser } from "./auth";
@@ -337,6 +337,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error: any) {
       console.error("Error recording view:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/boats/validate", async (req, res) => {
+    try {
+      const schema = z.object({
+        description: z.string().min(10, "Описание должно содержать минимум 10 символов"),
+      });
+
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: fromZodError(result.error).message });
+      }
+
+      const validationResult = await validateDescription(result.data.description);
+      res.json(validationResult);
+    } catch (error: any) {
+      console.error("Validation error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/boats/create-with-contacts", async (req: any, res) => {
+    try {
+      const schema = z.object({
+        rawDescription: z.string().min(10),
+        extractedData: z.object({
+          price: z.number().positive(),
+          year: z.number().int(),
+          manufacturer: z.string().nullable(),
+          model: z.string().nullable(),
+        }),
+        photoUrls: z.array(z.string()),
+        contacts: z.array(z.object({
+          contactType: z.enum(["phone", "whatsapp", "telegram", "in_app_chat"]),
+          contactValue: z.string(),
+        })),
+      });
+
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: fromZodError(result.error).message });
+      }
+
+      const userId = req.session?.userId || null;
+
+      const aiResult = await generateListingWithWebSearch({
+        rawDescription: result.data.rawDescription,
+        extractedData: result.data.extractedData,
+        photoUrls: result.data.photoUrls,
+      });
+
+      const boatData = {
+        userId,
+        title: aiResult.title,
+        description: aiResult.description,
+        originalDescription: result.data.rawDescription,
+        status: "pending_moderation" as const,
+        price: result.data.extractedData.price,
+        currency: "₽" as const,
+        year: result.data.extractedData.year,
+        location: aiResult.location || "Не указано",
+        manufacturer: aiResult.manufacturer,
+        model: aiResult.model,
+        boatType: aiResult.boatType,
+        length: aiResult.length,
+        photoCount: result.data.photoUrls.length,
+        photoUrls: result.data.photoUrls,
+        isPromoted: false,
+      };
+
+      const boatValidation = insertBoatSchema.safeParse(boatData);
+      if (!boatValidation.success) {
+        return res.status(400).json({ error: fromZodError(boatValidation.error).message });
+      }
+
+      const boat = await storage.createBoat(boatValidation.data);
+
+      for (const contact of result.data.contacts) {
+        await storage.createBoatContact({
+          boatId: boat.id,
+          contactType: contact.contactType,
+          contactValue: contact.contactValue,
+        });
+      }
+
+      res.status(201).json({ boat });
+    } catch (error: any) {
+      console.error("Create with contacts error:", error);
       res.status(500).json({ error: error.message });
     }
   });
