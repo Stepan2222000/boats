@@ -311,13 +311,13 @@ export async function validateDescription(description: string) {
 }
 
 const webSearchResponseSchema = z.object({
-  title: z.string().min(5),
-  description: z.string().min(10),
-  manufacturer: z.string().nullable(),
-  model: z.string().nullable(),
-  boatType: z.string().nullable(),
-  length: z.number().positive().nullable(),
-  location: z.string().nullable(),
+  title: z.string().min(5).optional().default("Продажа лодки"),
+  description: z.string().min(10).optional().default("Описание отсутствует"),
+  manufacturer: z.string().nullable().optional().default(null),
+  model: z.string().nullable().optional().default(null),
+  boatType: z.string().nullable().optional().default(null),
+  length: z.number().positive().nullable().optional().default(null),
+  location: z.string().nullable().optional().default(null),
 });
 
 export async function generateListingWithWebSearch(input: {
@@ -392,7 +392,17 @@ export async function generateListingWithWebSearch(input: {
     
     if (!validationResult.success) {
       console.error("Web search response validation failed:", validationResult.error);
-      throw new Error("Не удалось сгенерировать объявление");
+      console.log("Parsed content:", parsed);
+      
+      return {
+        title: parsed?.title || `${input.extractedData.manufacturer || ''} ${input.extractedData.model || 'Лодка'} ${input.extractedData.year}`.trim(),
+        description: parsed?.description || input.rawDescription,
+        manufacturer: parsed?.manufacturer || input.extractedData.manufacturer,
+        model: parsed?.model || input.extractedData.model,
+        boatType: parsed?.boatType || null,
+        length: parsed?.length || null,
+        location: parsed?.location || null,
+      };
     }
     
     return validationResult.data;

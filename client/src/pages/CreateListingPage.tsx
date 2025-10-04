@@ -115,7 +115,10 @@ export default function CreateListingPage() {
 
   const createMutation = useMutation({
     mutationFn: async (contactData: ContactFormValues) => {
-      setStep("generating");
+      toast({
+        title: "Создаем объявление...",
+        description: "AI обрабатывает ваше объявление. Это займет несколько секунд.",
+      });
       
       const contacts = [];
       contacts.push({ contactType: "phone", contactValue: contactData.phone });
@@ -159,13 +162,12 @@ export default function CreateListingPage() {
       
       queryClient.invalidateQueries({ queryKey: ["/api/boats"] });
       toast({
-        title: "Объявление отправлено на модерацию!",
-        description: "Ваше объявление будет проверено администратором и опубликовано.",
+        title: "Объявление отправлено!",
+        description: "AI создал объявление и отправил на модерацию. Ожидайте проверки администратором.",
       });
       setLocation("/");
     },
     onError: (error: Error) => {
-      setStep("contacts");
       toast({
         title: "Ошибка",
         description: error.message,
@@ -242,7 +244,6 @@ export default function CreateListingPage() {
               {step === "description" && "Опишите вашу лодку подробно, включая цену, год, производителя и модель"}
               {step === "form" && "Заполните дополнительную информацию"}
               {step === "contacts" && "Укажите контактную информацию"}
-              {step === "generating" && "Генерируем профессиональное объявление..."}
             </CardDescription>
           </CardHeader>
           
@@ -562,18 +563,6 @@ export default function CreateListingPage() {
                   </div>
                 </form>
               </Form>
-            )}
-
-            {step === "generating" && (
-              <div className="text-center py-12">
-                <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Генерируем профессиональное объявление
-                </h3>
-                <p className="text-gray-600">
-                  Используем AI для поиска характеристик и создания описания...
-                </p>
-              </div>
             )}
           </CardContent>
         </Card>
