@@ -223,3 +223,182 @@ export async function interpretSearchQuery(userQuery: string) {
     };
   }
 }
+
+const validationResponseSchema = z.object({
+  isValid: z.boolean(),
+  missingFields: z.array(z.string()),
+  extractedData: z.object({
+    price: z.number().nullable(),
+    year: z.number().nullable(),
+    manufacturer: z.string().nullable(),
+    model: z.string().nullable(),
+  }).nullable(),
+});
+
+export async function validateDescription(description: string) {
+  const prompt = `Ты ассистент для маркетплейса водной техники. Проверь, содержит ли описание пользователя ОБЯЗАТЕЛЬНЫЕ параметры для создания объявления.
+
+Описание пользователя:
+"${description}"
+
+ОБЯЗАТЕЛЬНЫЕ параметры:
+1. Цена (в любом формате: "3500000", "3.5 миллиона", "3,5 млн" и т.д.)
+2. Год выпуска (например: "2015", "2015 года" и т.д.)
+3. Модель (название модели лодки/катера)
+4. Производитель (бренд, марка)
+
+Твоя задача:
+1. Проверить наличие ВСЕХ четырех параметров
+2. Если все параметры есть - извлечь их значения
+3. Если чего-то не хватает - указать что именно
+
+Верни результат строго в формате JSON:
+{
+  "isValid": true/false,
+  "missingFields": ["Цена", "Год выпуска", "Модель", "Производитель"] или [],
+  "extractedData": {
+    "price": число или null,
+    "year": число или null,
+    "manufacturer": "строка" или null,
+    "model": "строка" или null
+  } или null
+}
+
+ВАЖНО:
+- isValid = true только если ВСЕ 4 параметра присутствуют
+- missingFields содержит список на русском языке того, чего не хватает
+- extractedData заполняется только если isValid = true`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "Ты помощник для проверки объявлений о продаже водной техники. Ты понимаешь русский язык.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+    });
+
+    const content = completion.choices[0].message.content;
+    if (!content) {
+      throw new Error("No response from OpenAI");
+    }
+
+    const parsed = JSON.parse(content);
+    const validationResult = validationResponseSchema.safeParse(parsed);
+    
+    if (!validationResult.success) {
+      console.error("Validation response parsing failed:", validationResult.error);
+      return {
+        isValid: false,
+        missingFields: ["Цена", "Год выпуска", "Модель", "Производитель"],
+        extractedData: null,
+      };
+    }
+    
+    return validationResult.data;
+  } catch (error) {
+    console.error("OpenAI validation error:", error);
+    throw new Error("Не удалось проверить описание");
+  }
+}
+
+const webSearchResponseSchema = z.object({
+  title: z.string().min(5),
+  description: z.string().min(10),
+  manufacturer: z.string().nullable(),
+  model: z.string().nullable(),
+  boatType: z.string().nullable(),
+  length: z.number().positive().nullable(),
+  location: z.string().nullable(),
+});
+
+export async function generateListingWithWebSearch(input: {
+  rawDescription: string;
+  extractedData: {
+    price: number;
+    year: number;
+    manufacturer: string | null;
+    model: string | null;
+  };
+  photoUrls: string[];
+}) {
+  const prompt = `Ты профессиональный эксперт по водной технике и копирайтер для премиального маркетплейса.
+
+Пользователь хочет продать лодку/катер/яхту. Вот его описание:
+"${input.rawDescription}"
+
+Извлеченные данные:
+- Цена: ${input.extractedData.price} ₽
+- Год: ${input.extractedData.year}
+- Производитель: ${input.extractedData.manufacturer || 'не указан'}
+- Модель: ${input.extractedData.model || 'не указана'}
+- Количество фото: ${input.photoUrls.length}
+
+Твоя задача:
+1. Используй WEB SEARCH чтобы найти точные характеристики этой модели (длина, тип, особенности)
+2. Проверь правильность названия производителя и модели
+3. Найди дополнительную информацию о характеристиках, которых нет в описании
+4. Создай профессиональное, детальное описание (3-5 предложений)
+5. Создай привлекательный заголовок
+
+Верни результат строго в формате JSON:
+{
+  "title": "краткий но информативный заголовок с моделью",
+  "description": "детальное профессиональное описание 3-5 предложений с характеристиками",
+  "manufacturer": "точное название производителя",
+  "model": "точное название модели",
+  "boatType": "Катер/Яхта/Гидроцикл/Лодка",
+  "length": длина в метрах (number) или null,
+  "location": "город из описания или null"
+}
+
+ВАЖНО:
+- Используй web search для поиска характеристик
+- Описание должно быть точным, профессиональным и привлекательным
+- Все данные должны быть проверены через интернет
+- length - обязательно число (number), не строка`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-5-mini",
+      messages: [
+        {
+          role: "system",
+          content: "Ты профессиональный эксперт по водной технике. У тебя есть доступ к интернету для поиска характеристик лодок и катеров. Используй web search для поиска точной информации.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+    });
+
+    const content = completion.choices[0].message.content;
+    if (!content) {
+      throw new Error("No response from OpenAI");
+    }
+
+    const parsed = JSON.parse(content);
+    const validationResult = webSearchResponseSchema.safeParse(parsed);
+    
+    if (!validationResult.success) {
+      console.error("Web search response validation failed:", validationResult.error);
+      throw new Error("Не удалось сгенерировать объявление");
+    }
+    
+    return validationResult.data;
+  } catch (error) {
+    console.error("OpenAI web search generation error:", error);
+    throw new Error("Не удалось сгенерировать объявление с помощью AI");
+  }
+}

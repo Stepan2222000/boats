@@ -54,6 +54,8 @@ export const boats = pgTable("boats", {
   userId: varchar("user_id").references(() => users.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
+  originalDescription: text("original_description"),
+  status: varchar("status", { length: 30 }).notNull().default("pending_moderation"),
   price: integer("price").notNull(),
   currency: varchar("currency", { length: 3 }).notNull().default("₽"),
   year: integer("year").notNull(),
@@ -84,6 +86,8 @@ export const insertBoatSchema = createInsertSchema(boats).omit({
   viewCount: true,
   viewHistory: true,
 }).extend({
+  status: z.enum(["pending_moderation", "approved", "rejected"]).default("pending_moderation"),
+  originalDescription: z.string().optional(),
   price: z.number().positive(),
   year: z.number().min(1900).max(new Date().getFullYear() + 1),
   length: z.number().positive().optional(),
@@ -116,3 +120,61 @@ export const insertAiSettingSchema = createInsertSchema(aiSettings).omit({
 
 export type InsertAiSetting = z.infer<typeof insertAiSettingSchema>;
 export type AiSetting = typeof aiSettings.$inferSelect;
+
+export const boatContacts = pgTable("boat_contacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  boatId: varchar("boat_id").notNull().references(() => boats.id, { onDelete: "cascade" }),
+  contactType: varchar("contact_type", { length: 20 }).notNull(),
+  contactValue: text("contact_value").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertBoatContactSchema = createInsertSchema(boatContacts).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  contactType: z.enum(["phone", "whatsapp", "telegram", "in_app_chat"]),
+  contactValue: z.string().min(1),
+});
+
+export type InsertBoatContact = z.infer<typeof insertBoatContactSchema>;
+export type BoatContact = typeof boatContacts.$inferSelect;
+
+export const conversations = pgTable("conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  boatId: varchar("boat_id").notNull().references(() => boats.id, { onDelete: "cascade" }),
+  sellerId: varchar("seller_id"),
+  buyerId: varchar("buyer_id"),
+  buyerPhone: varchar("buyer_phone", { length: 20 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+export type Conversation = typeof conversations.$inferSelect;
+
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  senderId: varchar("sender_id"),
+  senderPhone: varchar("sender_phone", { length: 20 }),
+  content: text("content").notNull(),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  content: z.string().min(1, "Сообщение не может быть пустым"),
+});
+
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
