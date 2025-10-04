@@ -6,16 +6,19 @@ This is a boat marketplace application built with React, Express, and PostgreSQL
 
 ## Recent Changes
 
-**October 4, 2025** - CreateListingPage Improvements & Light Theme
+**October 4, 2025** - Photo Upload Fix & CreateListingPage Improvements
+- **Photo Upload Fixed (CRITICAL)**: 
+  - Fixed "Не удалось обработать загруженные фото" error after successful uploads
+  - Changed mapping strategy from uploadURL → normalizedPath to file.id → normalizedPath
+  - Uppy's `result.successful` doesn't reliably contain uploadURL, but always has file.id
+  - handleGetUploadParameters now stores: `fileIdToNormalizedPathRef[file.id] = normalizedPath`
+  - handleUploadComplete uses file.id to retrieve normalizedPath and fetch presigned URLs
+  - End-to-end tested and confirmed working - photos upload and display correctly
 - **Light Theme Applied**: Redesigned CreateListingPage with light colors (white background, blue accents) matching rest of site
 - **Form Improvements**:
   - Removed default values for price (0) and year (2025) - now empty by default
   - Updated description placeholder to avoid duplicating model/year info
   - Clean white input fields with blue borders and proper contrast
-- **Photo Upload Fixed**: 
-  - Fixed uploadURL → normalizedPath mapping using useRef for synchronous access
-  - Photos now display correctly after upload with presigned download URLs
-  - Enhanced preview UI with blue badges and proper styling
 - **UI Consistency**: All pages (except login/register) now use light theme with white/blue color scheme
 
 **October 4, 2025** - Phone Number Authentication System with Production-Grade Security
