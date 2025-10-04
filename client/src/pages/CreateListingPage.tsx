@@ -91,7 +91,12 @@ export default function CreateListingPage() {
           description: "Все необходимые данные найдены. Теперь укажите контакты.",
         });
       } else {
-        setValidationData(data.extractedData || {});
+        setValidationData({
+          price: data.extractedData?.price || 0,
+          year: data.extractedData?.year || 0,
+          manufacturer: data.extractedData?.manufacturer || null,
+          model: data.extractedData?.model || null,
+        });
         setStep("form");
         toast({
           title: "Нужна дополнительная информация",
