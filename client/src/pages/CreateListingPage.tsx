@@ -42,7 +42,7 @@ type ContactFormValues = z.infer<typeof contactFormSchema>;
 export default function CreateListingPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [step, setStep] = useState<"description" | "contacts" | "generating">("description");
+  const [step, setStep] = useState<"description" | "form" | "contacts" | "generating">("description");
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<Record<string, string>>({});
   const fileIdToNormalizedPathRef = useRef<Record<string, string>>({});
@@ -91,10 +91,11 @@ export default function CreateListingPage() {
           description: "Все необходимые данные найдены. Теперь укажите контакты.",
         });
       } else {
+        setValidationData(data.extractedData || {});
+        setStep("form");
         toast({
-          title: "Недостаточно информации",
-          description: `Пожалуйста, укажите: ${data.missingFields.join(", ")}`,
-          variant: "destructive",
+          title: "Нужна дополнительная информация",
+          description: `Пожалуйста, заполните оставшиеся поля`,
         });
       }
     },
@@ -234,6 +235,7 @@ export default function CreateListingPage() {
             </CardTitle>
             <CardDescription>
               {step === "description" && "Опишите вашу лодку подробно, включая цену, год, производителя и модель"}
+              {step === "form" && "Заполните дополнительную информацию"}
               {step === "contacts" && "Укажите контактную информацию"}
               {step === "generating" && "Генерируем профессиональное объявление..."}
             </CardDescription>
@@ -336,6 +338,73 @@ export default function CreateListingPage() {
                   </Button>
                 </form>
               </Form>
+            )}
+
+            {step === "form" && (
+              <div className="space-y-6">
+                <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                  <p className="text-sm text-gray-700">
+                    Пожалуйста, заполните недостающую информацию для завершения объявления
+                  </p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">Цена (₽)</label>
+                    <Input
+                      type="number"
+                      placeholder="Например: 3500000"
+                      defaultValue={validationData?.price || ""}
+                      onChange={(e) => setValidationData({...validationData, price: parseInt(e.target.value) || 0})}
+                      className="text-base bg-white border-blue-300"
+                      data-testid="input-price"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">Год выпуска</label>
+                    <Input
+                      type="number"
+                      placeholder="Например: 2015"
+                      defaultValue={validationData?.year || ""}
+                      onChange={(e) => setValidationData({...validationData, year: parseInt(e.target.value) || 0})}
+                      className="text-base bg-white border-blue-300"
+                      data-testid="input-year"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">Местоположение</label>
+                    <Input
+                      type="text"
+                      placeholder="Например: Москва"
+                      defaultValue={validationData?.location || ""}
+                      onChange={(e) => setValidationData({...validationData, location: e.target.value})}
+                      className="text-base bg-white border-blue-300"
+                      data-testid="input-location"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-4 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep("description")}
+                    className="flex-1"
+                  >
+                    Назад
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setStep("contacts")}
+                    className="flex-1 gap-2 bg-gradient-to-r from-blue-600 to-blue-700"
+                    data-testid="button-continue"
+                  >
+                    Продолжить
+                  </Button>
+                </div>
+              </div>
             )}
 
             {step === "contacts" && (
