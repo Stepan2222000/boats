@@ -6,6 +6,22 @@ This is a boat marketplace application built with React, Express, and PostgreSQL
 
 ## Recent Changes
 
+**October 4, 2025** - Contact Fields Implementation
+- **Contact Type & Phone**: Added contactType (enum: phone/whatsapp/telegram) and contactPhone fields to boats schema
+  - Database migration: ALTER TABLE boats ADD contact_type varchar, contact_phone text
+  - Russian phone validation: /^\+7\d{10}$/ (e.g., +79991234567)
+  - Default contactPhone in CreateListingPage auto-fills with user.phone
+- **Form Integration**: Both CreateListingPage and EditListingPage include Select for contact type and Input for contact phone
+  - Select options: "Телефон", "WhatsApp", "Telegram" with respective icons
+  - Phone/MessageCircle/Send icons from lucide-react
+- **API Endpoint Fix**: Updated /api/boats/ai-create to include contactType and contactPhone in aiInputSchema and boatData
+  - Bug fixed: AI-created listings now properly save contact information
+- **Display Logic**: ListingPage shows contact button with appropriate icon based on contactType
+  - Phone → Phone icon, WhatsApp → MessageCircle icon, Telegram → Send icon
+  - Backward compatibility: Falls back to old phone field if contactPhone not present
+- **Type Safety**: All contact fields properly typed, no 'any' types used
+- **Testing**: E2E test confirms: registration → create listing with WhatsApp contact → display with correct icon and phone number
+
 **October 4, 2025** - Photo Upload Fix & CreateListingPage Improvements
 - **Photo Upload Fixed (CRITICAL)**: 
   - Fixed "Не удалось обработать загруженные фото" error after successful uploads
