@@ -196,7 +196,7 @@ export default function CreateListingPage() {
         body: JSON.stringify({ objectPath: path }),
       });
       const data = await response.json();
-      return { path, url: data.downloadUrl };
+      return { path, url: data.downloadURL };
     });
 
     const previews = await Promise.all(previewRequests);
