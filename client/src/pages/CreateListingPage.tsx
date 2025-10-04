@@ -118,9 +118,7 @@ export default function CreateListingPage() {
     });
     const data = await response.json();
     
-    console.log('🔵 Upload params for file:', file.id, { uploadURL: data.uploadURL, normalizedPath: data.normalizedPath });
     fileIdToNormalizedPathRef.current[file.id] = data.normalizedPath;
-    console.log('🔵 Stored in ref. Total mappings:', Object.keys(fileIdToNormalizedPathRef.current).length);
     
     return {
       method: "PUT" as const,
@@ -129,34 +127,16 @@ export default function CreateListingPage() {
   };
 
   const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    console.log('🟢 Upload complete triggered!', {
-      successfulCount: result.successful?.length,
-      failedCount: result.failed?.length
-    });
-    
     if (!result.successful || result.successful.length === 0) {
-      console.log('❌ No successful uploads');
       return;
     }
     
-    console.log('🟢 Successful files:', result.successful.map(f => ({
-      name: f.name,
-      id: f.id
-    })));
-    
-    console.log('🟢 Current ref mappings:', fileIdToNormalizedPathRef.current);
-    
     const normalizedPaths = result.successful
       .map((file) => {
-        console.log('🔍 Processing file:', file.name, 'file.id:', file.id);
-        
         const normalizedPath = fileIdToNormalizedPathRef.current[file.id];
-        console.log('🔍 Found normalizedPath:', normalizedPath);
         return normalizedPath || null;
       })
       .filter((url): url is string => url !== null && url.startsWith('/objects/'));
-    
-    console.log('✅ Final normalizedPaths to fetch:', normalizedPaths);
     
     if (normalizedPaths.length > 0) {
       const remainingSlots = 30 - photoUrls.length;
