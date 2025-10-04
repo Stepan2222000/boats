@@ -341,6 +341,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/boats/:id/contacts", async (req, res) => {
+    try {
+      const contacts = await storage.getBoatContacts(req.params.id);
+      res.json(contacts);
+    } catch (error: any) {
+      console.error("Error fetching contacts:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/boats/validate", async (req, res) => {
     try {
       const schema = z.object({

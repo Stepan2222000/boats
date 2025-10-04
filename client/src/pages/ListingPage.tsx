@@ -9,7 +9,7 @@ import { Edit, Eye, Trash2, MapPin, Calendar, Ruler, Package, Phone, MessageCirc
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Boat } from "@shared/schema";
+import type { Boat, BoatContact } from "@shared/schema";
 
 export default function ListingPage() {
   const { id } = useParams();
@@ -19,6 +19,11 @@ export default function ListingPage() {
 
   const { data: boat, isLoading } = useQuery<Boat>({
     queryKey: [`/api/boats/${id}`],
+    enabled: !!id,
+  });
+
+  const { data: contacts = [] } = useQuery<BoatContact[]>({
+    queryKey: [`/api/boats/${id}/contacts`],
     enabled: !!id,
   });
 
@@ -247,25 +252,51 @@ export default function ListingPage() {
             )}
 
             {/* Contact */}
-            {(boat.contactPhone || boat.phone) && (
+            {(contacts.length > 0 || boat.contactPhone || boat.phone) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Контакты</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  {boat.contactPhone && (
-                    <Button className="w-full gap-2" data-testid="button-contact">
-                      {boat.contactType === 'whatsapp' && <MessageCircle className="w-4 h-4" />}
-                      {boat.contactType === 'telegram' && <Send className="w-4 h-4" />}
-                      {boat.contactType === 'phone' && <Phone className="w-4 h-4" />}
-                      {boat.contactPhone}
-                    </Button>
-                  )}
-                  {!boat.contactPhone && boat.phone && (
-                    <Button className="w-full gap-2" data-testid="button-contact">
-                      <Phone className="w-4 h-4" />
-                      {boat.phone}
-                    </Button>
+                <CardContent className="space-y-3">
+                  {contacts.length > 0 ? (
+                    contacts.map((contact) => {
+                      const getIcon = () => {
+                        switch (contact.contactType) {
+                          case 'whatsapp': return <MessageCircle className="w-4 h-4" />;
+                          case 'telegram': return <Send className="w-4 h-4" />;
+                          case 'phone': return <Phone className="w-4 h-4" />;
+                          default: return <Phone className="w-4 h-4" />;
+                        }
+                      };
+                      
+                      return (
+                        <Button 
+                          key={contact.id} 
+                          className="w-full gap-2" 
+                          data-testid={`button-contact-${contact.id}`}
+                        >
+                          {getIcon()}
+                          {contact.contactValue}
+                        </Button>
+                      );
+                    })
+                  ) : (
+                    <>
+                      {boat.contactPhone && (
+                        <Button className="w-full gap-2" data-testid="button-contact-legacy-primary">
+                          {boat.contactType === 'whatsapp' ? <MessageCircle className="w-4 h-4" /> :
+                           boat.contactType === 'telegram' ? <Send className="w-4 h-4" /> :
+                           <Phone className="w-4 h-4" />}
+                          {boat.contactPhone}
+                        </Button>
+                      )}
+                      {boat.phone && (
+                        <Button className="w-full gap-2" data-testid="button-contact-legacy-phone">
+                          <Phone className="w-4 h-4" />
+                          {boat.phone}
+                        </Button>
+                      )}
+                    </>
                   )}
                 </CardContent>
               </Card>
