@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Sparkles, Loader2, Image as ImageIcon, X } from "lucide-react";
@@ -28,6 +29,8 @@ const listingFormSchema = z.object({
   manufacturer: z.string().optional(),
   model: z.string().optional(),
   length: z.coerce.number().positive("Длина должна быть больше нуля").optional(),
+  contactType: z.enum(["phone", "whatsapp", "telegram"]).default("phone"),
+  contactPhone: z.string().regex(/^\+7\d{10}$/, "Номер телефона должен быть в формате +7XXXXXXXXXX"),
 });
 
 type ListingFormValues = z.infer<typeof listingFormSchema>;
@@ -64,6 +67,8 @@ export default function CreateListingPage() {
       manufacturer: "",
       model: "",
       length: undefined,
+      contactType: "phone" as const,
+      contactPhone: user?.phone || "",
     },
   });
 
@@ -346,6 +351,48 @@ export default function CreateListingPage() {
                             placeholder="320 Sundancer"
                             className="text-base bg-white border-blue-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500"
                             data-testid="input-model"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="contactType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-bold text-gray-900">Тип связи</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="bg-white border-blue-300 text-gray-900" data-testid="select-contact-type">
+                              <SelectValue placeholder="Выберите тип связи" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="phone">Телефон</SelectItem>
+                            <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                            <SelectItem value="telegram">Telegram</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="contactPhone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-bold text-gray-900">Контактный телефон</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="+79991234567"
+                            className="text-base bg-white border-blue-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500"
+                            data-testid="input-contact-phone"
                           />
                         </FormControl>
                         <FormMessage />
