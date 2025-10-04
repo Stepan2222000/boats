@@ -71,6 +71,8 @@ export const boats = pgTable("boats", {
   sellerRating: decimal("seller_rating", { precision: 2, scale: 1 }).default("4.7"),
   sellerReviewCount: integer("seller_review_count").default(49),
   phone: text("phone").default("+7 (999) 123-45-67"),
+  contactType: varchar("contact_type", { length: 20 }).default("phone"),
+  contactPhone: text("contact_phone"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -92,6 +94,8 @@ export const insertBoatSchema = createInsertSchema(boats).omit({
   sellerRating: z.number().min(0).max(5).optional(),
   sellerReviewCount: z.number().min(0).optional(),
   phone: z.string().optional(),
+  contactType: z.enum(["phone", "whatsapp", "telegram"]).default("phone"),
+  contactPhone: z.string().regex(/^\+7\d{10}$/, "Номер телефона должен быть в формате +7XXXXXXXXXX").optional(),
 });
 
 export type InsertBoat = z.infer<typeof insertBoatSchema>;
