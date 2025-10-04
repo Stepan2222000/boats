@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 interface BoatCardProps {
   id: string;
@@ -42,6 +43,7 @@ export default function BoatCard({
   sellerReviewCount = 49,
   phone = "+7 (999) 123-45-67"
 }: BoatCardProps) {
+  const [, setLocation] = useLocation();
   const [favorite, setFavorite] = useState(isFavorite);
   const [showPhone, setShowPhone] = useState(false);
 
@@ -64,7 +66,7 @@ export default function BoatCard({
   };
 
   const handleCardClick = () => {
-    console.log("Card clicked:", id);
+    setLocation(`/listing/${id}`);
   };
 
   const rating = typeof sellerRating === 'string' ? parseFloat(sellerRating) : sellerRating;
