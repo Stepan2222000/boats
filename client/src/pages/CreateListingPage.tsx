@@ -364,7 +364,7 @@ export default function CreateListingPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-base font-bold text-gray-900">Тип связи</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger className="bg-white border-blue-300 text-gray-900" data-testid="select-contact-type">
                               <SelectValue placeholder="Выберите тип связи" />
