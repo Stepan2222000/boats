@@ -51,6 +51,51 @@ export default function AdminPage() {
     queryKey: ['/api/admin/users'],
   });
 
+  const { data: pendingBoats, isLoading: pendingLoading } = useQuery<Boat[]>({
+    queryKey: ['/api/admin/pending'],
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest('PUT', `/api/boats/${id}/approve`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/pending'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/boats'] });
+      toast({
+        title: "Объявление одобрено",
+        description: "Объявление успешно опубликовано",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось одобрить объявление",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest('PUT', `/api/boats/${id}/reject`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/pending'] });
+      toast({
+        title: "Объявление отклонено",
+        description: "Объявление успешно отклонено",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось отклонить объявление",
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateMutation = useMutation({
     mutationFn: async (data: { key: string; value: string }) => {
       const response = await apiRequest('PUT', '/api/admin/ai-settings', data);
@@ -110,8 +155,12 @@ export default function AdminPage() {
           <p className="text-muted-foreground">Настройки AI моделей и промптов</p>
         </div>
 
-        <Tabs defaultValue="models" className="space-y-4">
+        <Tabs defaultValue="moderation" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="moderation" data-testid="tab-moderation">
+              <Eye className="w-4 h-4 mr-2" />
+              Модерация
+            </TabsTrigger>
             <TabsTrigger value="models" data-testid="tab-models">
               <Sparkles className="w-4 h-4 mr-2" />
               Модели OpenAI
@@ -128,6 +177,124 @@ export default function AdminPage() {
               Объявления
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="moderation" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Модерация объявлений</CardTitle>
+                <CardDescription>
+                  Объявления ожидающие проверки и публикации
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {pendingLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground">Ожидает модерации</p>
+                      <p className="text-2xl font-bold">{pendingBoats?.length || 0}</p>
+                    </div>
+
+                    <div className="space-y-3">
+                      {pendingBoats?.map((boat) => (
+                        <Card key={boat.id} className="border-orange-200">
+                          <CardContent className="p-4">
+                            <div className="space-y-4">
+                              <div>
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="flex-1">
+                                    <h3 className="font-bold text-lg">{boat.title}</h3>
+                                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                                      {boat.description}
+                                    </p>
+                                  </div>
+                                  <Badge variant="outline" className="ml-2 border-orange-400 text-orange-600">
+                                    На модерации
+                                  </Badge>
+                                </div>
+                                
+                                <div className="flex flex-wrap gap-2 text-xs mt-3">
+                                  <Badge variant="secondary">
+                                    {boat.price.toLocaleString()} {boat.currency}
+                                  </Badge>
+                                  <Badge variant="outline">{boat.year} год</Badge>
+                                  <Badge variant="outline">{boat.location}</Badge>
+                                  {boat.boatType && <Badge variant="outline">{boat.boatType}</Badge>}
+                                  {boat.manufacturer && <Badge variant="outline">{boat.manufacturer}</Badge>}
+                                  {boat.model && <Badge variant="outline">{boat.model}</Badge>}
+                                </div>
+                              </div>
+
+                              {boat.originalDescription && (
+                                <div className="bg-muted p-3 rounded-lg">
+                                  <p className="text-xs text-muted-foreground mb-1">Исходное описание от пользователя:</p>
+                                  <p className="text-sm whitespace-pre-wrap">{boat.originalDescription}</p>
+                                </div>
+                              )}
+
+                              <div className="flex gap-2 pt-2 border-t">
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => approveMutation.mutate(boat.id)}
+                                  disabled={approveMutation.isPending}
+                                  className="gap-1"
+                                  data-testid={`button-approve-${boat.id}`}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  Одобрить
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => rejectMutation.mutate(boat.id)}
+                                  disabled={rejectMutation.isPending}
+                                  className="gap-1"
+                                  data-testid={`button-reject-${boat.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Отклонить
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setLocation(`/edit/${boat.id}`)}
+                                  className="gap-1"
+                                  data-testid={`button-edit-pending-${boat.id}`}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                  Редактировать
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setLocation(`/listing/${boat.id}`)}
+                                  className="gap-1"
+                                  data-testid={`button-view-pending-${boat.id}`}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  Просмотр
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+
+                      {pendingBoats?.length === 0 && (
+                        <div className="text-center py-12 text-muted-foreground">
+                          Нет объявлений на модерации
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="models" className="space-y-4">
             <Card>

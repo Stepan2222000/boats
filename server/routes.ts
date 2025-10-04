@@ -16,6 +16,24 @@ export function isAuthenticated(req: any, res: any, next: any) {
   next();
 }
 
+// Middleware to check admin privileges
+async function isAdmin(req: any, res: any, next: any) {
+  if (!req.session?.userId) {
+    return res.status(401).json({ message: "Необходима авторизация" });
+  }
+  
+  try {
+    const user = await storage.getUser(req.session.userId);
+    if (!user || user.phone !== "+79999999999") {
+      return res.status(403).json({ message: "Доступ запрещен. Требуются права администратора" });
+    }
+    next();
+  } catch (error) {
+    console.error("Admin check error:", error);
+    return res.status(500).json({ message: "Ошибка проверки прав доступа" });
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post('/api/register', async (req, res) => {
@@ -25,6 +43,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ 
           message: fromZodError(result.error).message 
         });
+      }
+
+      const normalizedPhone = result.data.phone.replace(/\s+/g, '').trim();
+      if (normalizedPhone === "+79999999999") {
+        return res.status(403).json({ message: "Этот номер телефона зарезервирован" });
       }
 
       const user = await registerUser(result.data);
@@ -486,19 +509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/boats/:id", async (req, res) => {
-    try {
-      const success = await storage.deleteBoat(req.params.id);
-      if (!success) {
-        return res.status(404).json({ error: "Boat not found" });
-      }
-      res.status(204).send();
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.get("/api/admin/users", async (req, res) => {
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       res.json(users);
@@ -507,7 +518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/ai-settings", async (req, res) => {
+  app.get("/api/admin/ai-settings", isAdmin, async (req, res) => {
     try {
       const settings = await storage.getAllAiSettings();
       res.json(settings);
@@ -516,7 +527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/admin/ai-settings", async (req, res) => {
+  app.put("/api/admin/ai-settings", isAdmin, async (req, res) => {
     try {
       const updateSchema = z.object({
         key: z.string().min(1),
@@ -538,6 +549,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       res.json(setting);
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/pending", isAdmin, async (req, res) => {
+    try {
+      const boats = await storage.getBoatsByStatus("pending_moderation");
+      res.json(boats);
+    } catch (error: any) {
+      console.error("Error fetching pending boats:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/boats/:id/approve", isAdmin, async (req, res) => {
+    try {
+      const boat = await storage.updateBoatStatus(req.params.id, "approved");
+      if (!boat) {
+        return res.status(404).json({ error: "Boat not found" });
+      }
+      res.json(boat);
+    } catch (error: any) {
+      console.error("Error approving boat:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/boats/:id/reject", isAdmin, async (req, res) => {
+    try {
+      const boat = await storage.updateBoatStatus(req.params.id, "rejected");
+      if (!boat) {
+        return res.status(404).json({ error: "Boat not found" });
+      }
+      res.json(boat);
+    } catch (error: any) {
+      console.error("Error rejecting boat:", error);
       res.status(500).json({ error: error.message });
     }
   });

@@ -9,6 +9,8 @@ export interface IStorage {
   getAllUsers(): Promise<PublicUser[]>;
   getBoat(id: string): Promise<Boat | undefined>;
   getAllBoats(): Promise<Boat[]>;
+  getBoatsByStatus(status: string): Promise<Boat[]>;
+  updateBoatStatus(id: string, status: string): Promise<Boat | undefined>;
   searchBoats(params: {
     query?: string;
     minPrice?: number;
@@ -65,6 +67,19 @@ export class DbStorage implements IStorage {
 
   async getAllBoats(): Promise<Boat[]> {
     return await db.select().from(boats).where(eq(boats.status, "approved")).orderBy(desc(boats.createdAt));
+  }
+
+  async getBoatsByStatus(status: string): Promise<Boat[]> {
+    return await db.select().from(boats).where(eq(boats.status, status)).orderBy(desc(boats.createdAt));
+  }
+
+  async updateBoatStatus(id: string, status: string): Promise<Boat | undefined> {
+    const result = await db
+      .update(boats)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(boats.id, id))
+      .returning();
+    return result[0];
   }
 
   async searchBoats(params: {
