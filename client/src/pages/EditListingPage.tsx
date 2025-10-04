@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, Save } from "lucide-react";
@@ -30,6 +31,8 @@ const editFormSchema = z.object({
   boatType: z.string().optional(),
   length: z.coerce.number().positive("Длина должна быть больше нуля").optional().or(z.literal("")),
   phone: z.string().optional(),
+  contactType: z.enum(["phone", "whatsapp", "telegram"]).default("phone"),
+  contactPhone: z.string().regex(/^\+7\d{10}$/, "Номер телефона должен быть в формате +7XXXXXXXXXX"),
 });
 
 type EditFormValues = z.infer<typeof editFormSchema>;
@@ -59,6 +62,8 @@ export default function EditListingPage() {
       boatType: "",
       length: "",
       phone: "",
+      contactType: "phone" as const,
+      contactPhone: "",
     },
   });
 
@@ -97,6 +102,8 @@ export default function EditListingPage() {
         boatType: boat.boatType || "",
         length: boat.length ? Number(boat.length) : ("" as any),
         phone: boat.phone || "",
+        contactType: (boat.contactType as "phone" | "whatsapp" | "telegram") || "phone",
+        contactPhone: boat.contactPhone || "",
       });
     }
   }, [boat, user, form, toast, setLocation]);
@@ -320,6 +327,49 @@ export default function EditListingPage() {
                     </FormItem>
                   )}
                 />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="contactType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Тип связи</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-contact-type">
+                              <SelectValue placeholder="Выберите тип связи" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="phone">Телефон</SelectItem>
+                            <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                            <SelectItem value="telegram">Telegram</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="contactPhone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Контактный телефон</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="+79991234567"
+                            data-testid="input-contact-phone"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="flex gap-4">
                   <Button
