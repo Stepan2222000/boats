@@ -14,8 +14,47 @@ The frontend uses React 18 with TypeScript, Vite for bundling, and Wouter for ro
 #### Backend Architecture
 The backend is an Express.js application written in TypeScript, using an ESM module system. It provides RESTful APIs under the `/api` namespace with Zod for runtime validation and Drizzle-Zod for database schema validation. Key features include phone number and password-based authentication with secure bcrypt hashing, session management via PostgreSQL, and protected routes for listing management and administration. An admin panel allows moderation of listings, user management, and AI model configuration.
 
+**Real-time Admin Dashboard**: WebSocket server (`/ws` path) provides live updates to admin clients when boat listings change status. Features include:
+- Automatic reconnection with exponential backoff (up to 10 attempts)
+- Server-side heartbeat (ping/pong every 30 seconds)
+- Singleton WebSocket server to prevent memory leaks during HMR
+- Broadcasts on AI processing completion, edits, approvals, and rejections
+
 #### Data Storage
-The application uses PostgreSQL via Neon serverless database, accessed with Drizzle ORM for type-safe queries. The schema includes `users` (for authentication, with phone and password hash), `sessions` (for Express session storage), and `boats` (for listing details, including title, description, specifications, pricing, media, location, and view tracking). Migrations are managed in a dedicated directory, and the schema is defined in `shared/schema.ts`. Query patterns support full-text search, range filtering, location-based filtering, and sorting.
+The application uses PostgreSQL via Neon serverless database, accessed with Drizzle ORM for type-safe queries. The schema includes:
+- **users**: Authentication with phone and password hash
+- **sessions**: Express session storage
+- **boats**: Listing details including title, description, specifications, pricing, media, location, and view tracking. New fields for admin moderation workflow:
+  - `status`: "ai_processing" | "ai_ready" | "approved" | "rejected"
+  - `rawDescription`: User's original prompt for AI processing
+  - `aiError`: Stores AI processing errors for admin review
+  - `rejectionReason`: Admin's reason for rejecting a listing
+- **boatContacts**: Contact information (phone, email, telegram) for boat listings
+
+Migrations are managed in a dedicated directory, and the schema is defined in `shared/schema.ts`. Query patterns support full-text search, range filtering, location-based filtering, and sorting.
+
+### Admin Moderation Workflow
+
+The platform implements a complete admin moderation system with real-time updates:
+
+1. **User Submits Listing**: User provides raw description, boat details, photos, and contacts
+2. **Immediate Creation**: Listing created instantly with status "ai_processing"
+3. **AI Processing**: Background job processes listing with OpenAI (async, non-blocking)
+   - On success: Updates listing, sets status to "ai_ready"
+   - On error: Sets status to "ai_ready", stores error in `aiError` field
+4. **Real-time Update**: WebSocket broadcasts status change to all connected admins
+5. **Admin Review**: Admin sees:
+   - User's original prompt (`rawDescription`)
+   - AI-generated content (title, description, specs)
+   - Contact information
+   - Photos
+   - Any AI processing errors
+6. **Admin Actions**:
+   - **Edit**: Modify any listing field, changes broadcast to other admins
+   - **Approve**: Status → "approved", listing appears on public site
+   - **Reject**: Status → "rejected" with optional reason, listing hidden from public
+
+Admin credentials: phone "root", password "root" (for testing only)
 
 ### External Dependencies
 
