@@ -135,6 +135,8 @@ export class DbStorage implements IStorage {
     const boatData: any = {
       ...insertBoat,
       length: insertBoat.length ? insertBoat.length.toString() : null,
+      width: insertBoat.width ? insertBoat.width.toString() : null,
+      draft: insertBoat.draft ? insertBoat.draft.toString() : null,
     };
     const result = await db.insert(boats).values(boatData).returning();
     return result[0];
@@ -144,6 +146,8 @@ export class DbStorage implements IStorage {
     const boatData: any = {
       ...updateData,
       length: updateData.length ? updateData.length.toString() : undefined,
+      width: updateData.width ? updateData.width.toString() : undefined,
+      draft: updateData.draft ? updateData.draft.toString() : undefined,
       updatedAt: new Date(),
     };
     const result = await db
