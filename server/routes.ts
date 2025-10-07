@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertBoatSchema, registerUserSchema, loginUserSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
-import { generateBoatListing, interpretSearchQuery, validateDescription, generateListingWithWebSearch } from "./openai";
+import { generateBoatListing, interpretSearchQuery, validateDescription, generateListingWithWebSearch, generateBoatListingWithResponses } from "./openai";
 import { z } from "zod";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { registerUser, loginUser } from "./auth";
@@ -468,25 +468,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Запускаем AI обработку в фоне (не блокируем ответ)
-      generateListingWithWebSearch({
+      // Запускаем AI обработку в фоне (не блокируем ответ) с Responses API
+      generateBoatListingWithResponses({
         rawDescription: result.data.rawDescription,
-        extractedData: result.data.extractedData,
+        price: result.data.extractedData.price,
+        year: result.data.extractedData.year,
+        location: "Не указано",
         photoUrls: result.data.photoUrls,
       })
         .then(async (aiResult) => {
-          // Обновляем объявление с AI результатами
+          // Обновляем объявление с AI результатами (все поля из Avito)
           await storage.updateBoat(boat.id, {
             title: aiResult.title,
             description: aiResult.description,
-            location: aiResult.location || boatData.location,
-            manufacturer: aiResult.manufacturer || boatData.manufacturer,
-            model: aiResult.model || boatData.model,
-            boatType: aiResult.boatType,
+            manufacturer: aiResult.manufacturer,
+            model: aiResult.model,
+            manufacturerCountry: aiResult.manufacturerCountry,
+            category: aiResult.category,
             length: aiResult.length,
+            width: aiResult.width,
+            draft: aiResult.draft,
+            maxPassengers: aiResult.maxPassengers,
+            hullMaterial: aiResult.hullMaterial,
+            boatType: aiResult.boatType,
+            engineType: aiResult.engineType,
+            trailerIncluded: aiResult.trailerIncluded,
+            availability: aiResult.availability,
+            condition: aiResult.condition,
+            sources: aiResult.sources || [],
+            warnings: aiResult.warnings || [],
             status: "ai_ready" as const,
           });
-          console.log(`AI processing completed for boat ${boat.id}`);
+          console.log(`AI processing completed for boat ${boat.id} with ${aiResult.sources?.length || 0} sources`);
           broadcastBoatUpdate(boat.id, "ai_ready");
         })
         .catch((error) => {
