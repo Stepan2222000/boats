@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertBoatSchema, registerUserSchema, loginUserSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
-import { generateBoatListing, interpretSearchQuery, validateDescription, generateListingWithWebSearch, generateBoatListingWithResponses } from "./openai";
+import { interpretSearchQuery, validateDescription, generateListingWithWebSearch, generateBoatListingWithResponses } from "./openai";
 import { z } from "zod";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { registerUser, loginUser } from "./auth";
@@ -205,76 +205,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(boat);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.post("/api/boats/ai-create", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.session.userId;
-      
-      const aiInputSchema = z.object({
-        rawDescription: z.string().min(10, "Description must be at least 10 characters"),
-        price: z.coerce.number().positive("Price must be a positive number"),
-        year: z.coerce.number()
-          .int("Year must be a whole number")
-          .min(1900, "Year must be at least 1900")
-          .max(new Date().getFullYear() + 1, "Year cannot be in the future"),
-        location: z.string().min(2, "Location must be at least 2 characters"),
-        manufacturer: z.string().optional(),
-        model: z.string().optional(),
-        length: z.coerce.number().positive("Length must be positive").optional(),
-        contactType: z.enum(["phone", "whatsapp", "telegram"]).default("phone"),
-        contactPhone: z.string().regex(/^\+7\d{10}$/, "Phone must be in format +7XXXXXXXXXX"),
-      });
-
-      const inputResult = aiInputSchema.safeParse(req.body);
-      if (!inputResult.success) {
-        return res.status(400).json({ 
-          error: fromZodError(inputResult.error).message 
-        });
-      }
-
-      const aiResult = await generateBoatListing({
-        rawDescription: inputResult.data.rawDescription,
-        price: inputResult.data.price.toString(),
-        year: inputResult.data.year.toString(),
-        location: inputResult.data.location,
-        manufacturer: inputResult.data.manufacturer,
-        model: inputResult.data.model,
-        length: inputResult.data.length?.toString(),
-      });
-
-      const boatData = {
-        userId,
-        title: aiResult.title,
-        description: aiResult.description,
-        price: inputResult.data.price,
-        currency: "₽" as const,
-        year: inputResult.data.year,
-        location: inputResult.data.location,
-        manufacturer: aiResult.manufacturer,
-        model: aiResult.model,
-        boatType: aiResult.boatType,
-        length: aiResult.length,
-        photoCount: req.body.photoUrls?.length || 0,
-        photoUrls: req.body.photoUrls || [],
-        isPromoted: false,
-        contactType: inputResult.data.contactType,
-        contactPhone: inputResult.data.contactPhone,
-      };
-
-      const validationResult = insertBoatSchema.safeParse(boatData);
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          error: fromZodError(validationResult.error).message 
-        });
-      }
-
-      const boat = await storage.createBoat(validationResult.data);
-      res.status(201).json(boat);
-    } catch (error: any) {
-      console.error("AI create error:", error);
       res.status(500).json({ error: error.message });
     }
   });

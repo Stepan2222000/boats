@@ -145,9 +145,9 @@ export class DbStorage implements IStorage {
   async updateBoat(id: string, updateData: Partial<InsertBoat>): Promise<Boat | undefined> {
     const boatData: any = {
       ...updateData,
-      length: updateData.length ? updateData.length.toString() : undefined,
-      width: updateData.width ? updateData.width.toString() : undefined,
-      draft: updateData.draft ? updateData.draft.toString() : undefined,
+      length: updateData.length !== undefined ? (updateData.length !== null ? updateData.length.toString() : null) : undefined,
+      width: updateData.width !== undefined ? (updateData.width !== null ? updateData.width.toString() : null) : undefined,
+      draft: updateData.draft !== undefined ? (updateData.draft !== null ? updateData.draft.toString() : null) : undefined,
       updatedAt: new Date(),
     };
     const result = await db
