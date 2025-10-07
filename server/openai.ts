@@ -10,6 +10,9 @@ export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+const OPENAI_API_URL = "https://api.openai.com/v1";
+
 const aiResponseSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
@@ -402,5 +405,215 @@ export async function generateListingWithWebSearch(input: {
   } catch (error) {
     console.error("OpenAI web search generation error:", error);
     throw new Error("Не удалось сгенерировать объявление с помощью AI");
+  }
+}
+
+// Schema for Responses API with all Avito fields
+const responsesApiBoatSchema = z.object({
+  title: z.string().min(5),
+  description: z.string().min(10),
+  manufacturer: z.string().nullable(),
+  model: z.string().nullable(),
+  manufacturerCountry: z.string().nullable(),
+  category: z.string().nullable(),
+  length: z.number().positive().nullable(),
+  width: z.number().positive().nullable(),
+  draft: z.number().positive().nullable(),
+  maxPassengers: z.number().int().positive().nullable(),
+  hullMaterial: z.string().nullable(),
+  boatType: z.string().nullable(),
+  engineType: z.string().nullable(),
+  trailerIncluded: z.boolean().nullable(),
+  availability: z.string().nullable(),
+  condition: z.string().nullable(),
+  warnings: z.array(z.string()).optional().default([]),
+});
+
+// Generate boat listing using Responses API with web_search
+export async function generateBoatListingWithResponses(input: {
+  rawDescription: string;
+  price: number;
+  year: number;
+  location: string;
+  photoUrls: string[];
+}) {
+  try {
+    // Get AI settings from database
+    const modelSetting = await storage.getAiSetting('responsesModel');
+    const verbositySetting = await storage.getAiSetting('verbosity');
+    const reasoningEffortSetting = await storage.getAiSetting('reasoningEffort');
+    const maxOutputTokensSetting = await storage.getAiSetting('maxOutputTokens');
+    const systemPromptSetting = await storage.getAiSetting('systemPrompt');
+
+    const model = modelSetting?.settingValue || "gpt-5-mini";
+    const verbosity = verbositySetting?.settingValue || "medium";
+    const reasoningEffort = reasoningEffortSetting?.settingValue || "medium";
+    const maxOutputTokens = maxOutputTokensSetting?.settingValue ? parseInt(maxOutputTokensSetting.settingValue) : 8192;
+    
+    const systemPrompt = systemPromptSetting?.settingValue || `Ты профессиональный эксперт по водной технике и копирайтер для маркетплейса.
+
+ВАЖНЫЕ ПРАВИЛА:
+1. Заполняй ТОЛЬКО те поля, которые есть в скрине Avito
+2. Если информация недоступна - оставляй null и добавляй предупреждение в warnings
+3. Данные пользователя ПРИОРИТЕТНЕЕ веб-источников
+4. НЕ придумывай данные - только факты из веб-поиска или пользователя
+5. Все источники информации записывай отдельно
+
+Поля из Avito для заполнения:
+- Марка (manufacturer)
+- Модель (model) 
+- Страна происхождения бренда (manufacturerCountry)
+- Год выпуска (year)
+- Тип судна (boatType): Катер/Яхта/Гидроцикл/Лодка
+- Категория (category): например "Катер с каютой"
+- Длина (length) в метрах
+- Ширина (width) в метрах
+- Осадка (draft) в метрах
+- Максимально пассажиров (maxPassengers)
+- Материал корпуса (hullMaterial): например "Стеклопластик"
+- Тип мотора (engineType): Стационарный/Подвесной
+- Прицеп в комплекте (trailerIncluded): true/false
+- Доступность (availability): "В наличии"/"Под заказ"
+- Состояние (condition): "Новое"/"Б/у"`;
+
+    const userPrompt = `Пользователь хочет продать лодку/катер/яхту.
+
+Описание от пользователя: "${input.rawDescription}"
+Цена: ${input.price} ₽
+Год: ${input.year}
+Местоположение: ${input.location}
+Фото: ${input.photoUrls.length} шт.
+
+Твоя задача:
+1. Используй WEB SEARCH для поиска характеристик этой модели
+2. Заполни ВСЕ поля из Avito, которые удалось найти
+3. Если поле не найдено - оставь null и добавь предупреждение
+4. Создай профессиональное описание (3-5 предложений)
+5. Создай информативный заголовок
+
+Верни СТРОГО в формате JSON:
+{
+  "title": "краткий заголовок с моделью",
+  "description": "профессиональное описание 3-5 предложений",
+  "manufacturer": "производитель или null",
+  "model": "модель или null",
+  "manufacturerCountry": "страна производителя или null",
+  "category": "категория или null",
+  "length": число в метрах или null,
+  "width": число в метрах или null,
+  "draft": число в метрах или null,
+  "maxPassengers": число или null,
+  "hullMaterial": "материал или null",
+  "boatType": "Катер/Яхта/Гидроцикл/Лодка или null",
+  "engineType": "тип мотора или null",
+  "trailerIncluded": true/false/null,
+  "availability": "доступность или null",
+  "condition": "состояние или null",
+  "warnings": ["список предупреждений о недостающих данных"]
+}`;
+
+    // Call Responses API with web_search tool
+    const response = await fetch(`${OPENAI_API_URL}/responses`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        verbosity,
+        reasoning_effort: reasoningEffort,
+        max_completion_tokens: maxOutputTokens,
+        input: [
+          {
+            type: "message",
+            role: "system",
+            content: systemPrompt,
+          },
+          {
+            type: "message",
+            role: "user",
+            content: userPrompt,
+          }
+        ],
+        tools: [
+          {
+            type: "web_search"
+          }
+        ],
+        response_format: { type: "json_object" },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Responses API error:", errorText);
+      throw new Error(`Responses API failed: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    // Extract content from response
+    const content = data.output?.[0]?.content || data.output;
+    if (!content) {
+      throw new Error("No content in Responses API response");
+    }
+
+    // Parse JSON response
+    let parsed;
+    try {
+      parsed = typeof content === 'string' ? JSON.parse(content) : content;
+    } catch (parseError) {
+      console.error("Failed to parse Responses API JSON:", content);
+      throw new Error("Invalid JSON from AI");
+    }
+
+    // Extract sources from annotations if available
+    const sources: string[] = [];
+    if (data.annotations && Array.isArray(data.annotations)) {
+      for (const annotation of data.annotations) {
+        if (annotation.type === 'web_search' && annotation.url) {
+          sources.push(annotation.url);
+        }
+      }
+    }
+
+    // Validate response
+    const validationResult = responsesApiBoatSchema.safeParse(parsed);
+    
+    if (!validationResult.success) {
+      console.error("Responses API validation failed:", validationResult.error);
+      console.log("Parsed content:", parsed);
+      
+      // Return with fallback values
+      return {
+        title: parsed?.title || `${parsed?.manufacturer || ''} ${parsed?.model || 'Лодка'} ${input.year}`.trim(),
+        description: parsed?.description || input.rawDescription,
+        manufacturer: parsed?.manufacturer || null,
+        model: parsed?.model || null,
+        manufacturerCountry: parsed?.manufacturerCountry || null,
+        category: parsed?.category || null,
+        length: parsed?.length || null,
+        width: parsed?.width || null,
+        draft: parsed?.draft || null,
+        maxPassengers: parsed?.maxPassengers || null,
+        hullMaterial: parsed?.hullMaterial || null,
+        boatType: parsed?.boatType || null,
+        engineType: parsed?.engineType || null,
+        trailerIncluded: parsed?.trailerIncluded || null,
+        availability: parsed?.availability || null,
+        condition: parsed?.condition || null,
+        sources,
+        warnings: parsed?.warnings || ["Не удалось валидировать некоторые данные"],
+      };
+    }
+    
+    return {
+      ...validationResult.data,
+      sources,
+    };
+  } catch (error: any) {
+    console.error("Responses API generation error:", error);
+    throw new Error(`Не удалось сгенерировать объявление: ${error.message}`);
   }
 }
