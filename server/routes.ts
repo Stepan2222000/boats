@@ -7,6 +7,7 @@ import { generateBoatListing, interpretSearchQuery, validateDescription, generat
 import { z } from "zod";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { registerUser, loginUser } from "./auth";
+import { setupWebSocket, broadcastBoatUpdate } from "./websocket";
 
 // Middleware to check authentication
 export function isAuthenticated(req: any, res: any, next: any) {
@@ -477,6 +478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: "ai_ready" as const,
           });
           console.log(`AI processing completed for boat ${boat.id}`);
+          broadcastBoatUpdate(boat.id, "ai_ready");
         })
         .catch((error) => {
           console.error(`AI processing failed for boat ${boat.id}:`, error);
@@ -484,6 +486,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           storage.updateBoat(boat.id, {
             aiError: error.message || "Unknown AI processing error",
             status: "ai_ready" as const,
+          }).then(() => {
+            broadcastBoatUpdate(boat.id, "ai_ready");
           }).catch(err => console.error("Failed to save AI error:", err));
         });
 
@@ -578,6 +582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!boat) {
         return res.status(404).json({ error: "Boat not found" });
       }
+      broadcastBoatUpdate(req.params.id, "approved");
       res.json(boat);
     } catch (error: any) {
       console.error("Error approving boat:", error);
@@ -606,6 +611,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!boat) {
         return res.status(404).json({ error: "Boat not found" });
       }
+      broadcastBoatUpdate(req.params.id, "rejected");
       res.json(boat);
     } catch (error: any) {
       console.error("Error rejecting boat:", error);
@@ -659,6 +665,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   const httpServer = createServer(app);
+
+  // Initialize WebSocket for real-time updates
+  setupWebSocket(httpServer);
 
   return httpServer;
 }
