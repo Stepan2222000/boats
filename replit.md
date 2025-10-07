@@ -59,7 +59,22 @@ Admin credentials: phone "root", password "root" (for testing only)
 ### External Dependencies
 
 #### AI Integration
-- **OpenAI GPT API**: Utilized for intelligent listing generation, processing raw user input into structured listings, extracting boat specifications, and generating professional Russian-language descriptions and titles. Requires `OPENAI_API_KEY`.
+- **OpenAI Responses API**: Uses GPT-5-mini with web_search tool for intelligent listing generation. Processes raw user input into structured Avito-style listings by:
+  - Searching the web for missing boat specifications (manufacturer, model, year, etc.)
+  - Only populating fields visible in the Avito screenshot - no data fabrication
+  - Prioritizing user-provided information over web sources
+  - Generating professional Russian-language descriptions and titles
+  - Extracting and storing source URLs in the `sources` field
+  - Adding warnings to the `warnings` field for missing critical information
+  
+  **Admin Configuration** (accessible via "OpenAI Settings" tab):
+  - Model selection: gpt-5-mini (default) or gpt-4o
+  - Verbosity: low/medium/high
+  - Reasoning effort: minimal/low/medium/high
+  - Max output tokens: configurable (default: 8192)
+  - System prompt: customizable instructions for the AI
+  
+  All settings stored in `aiSettings` database table as key-value pairs. Requires `OPENAI_API_KEY`.
 
 #### Database Service
 - **Neon serverless PostgreSQL**: Provides the primary data storage. Connection is established using `@neondatabase/serverless` with WebSocket support and managed via the `DATABASE_URL` environment variable. Also used by `connect-pg-simple` for persistent user session storage.
