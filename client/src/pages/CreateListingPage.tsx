@@ -245,7 +245,18 @@ export default function CreateListingPage() {
           <CardContent>
             {step === "description" && (
               <Form {...descriptionForm}>
-                <form onSubmit={descriptionForm.handleSubmit((data) => validateMutation.mutate(data))} className="space-y-6">
+                <form onSubmit={descriptionForm.handleSubmit((data) => {
+                  // Механическая проверка наличия фото
+                  if (photoUrls.length === 0) {
+                    toast({
+                      title: "Добавьте фотографии",
+                      description: "Необходимо загрузить хотя бы одну фотографию лодки",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  validateMutation.mutate(data);
+                })} className="space-y-6">
                   <FormField
                     control={descriptionForm.control}
                     name="description"

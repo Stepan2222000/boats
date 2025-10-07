@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { z } from "zod";
+import { storage } from "./storage";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY is not set");
@@ -236,50 +237,42 @@ const validationResponseSchema = z.object({
 });
 
 export async function validateDescription(description: string) {
-  const prompt = `Ты ассистент для маркетплейса водной техники. Проверь, содержит ли описание пользователя ОБЯЗАТЕЛЬНЫЕ параметры для создания объявления.
+  try {
+    // Get validation settings from database
+    const validationModelSetting = await storage.getAiSetting('validationModel');
+    const validationPromptSetting = await storage.getAiSetting('validationPrompt');
+    
+    const model = validationModelSetting?.settingValue || "gpt-4o-mini";
+    const systemPrompt = validationPromptSetting?.settingValue || `Ты помощник для проверки объявлений о продаже водной техники. 
+Проверь, что пользователь предоставил все необходимые данные для публикации объявления:
 
-Описание пользователя:
-"${description}"
+Обязательные поля:
+- Описание лодки/катера (хотя бы несколько слов)
+- Цена (в рублях)
+- Местоположение (город)
 
-ОБЯЗАТЕЛЬНЫЕ параметры:
-1. Цена (в любом формате: "3500000", "3.5 миллиона", "3,5 млн" и т.д.)
-2. Год выпуска (например: "2015", "2015 года" и т.д.)
-3. Модель (название модели лодки/катера)
-4. Производитель (бренд, марка)
-
-Твоя задача:
-1. Проверить наличие ВСЕХ четырех параметров
-2. Если все параметры есть - извлечь их значения
-3. Если чего-то не хватает - указать что именно
-
-Верни результат строго в формате JSON:
+Верни результат в формате JSON:
 {
   "isValid": true/false,
-  "missingFields": ["Цена", "Год выпуска", "Модель", "Производитель"] или [],
+  "missingFields": ["поле1", "поле2"],
   "extractedData": {
-    "price": число или null,
-    "year": число или null,
-    "manufacturer": "строка" или null,
-    "model": "строка" или null
-  } или null
-}
+    "price": число,
+    "location": "город"
+  }
+}`;
 
-ВАЖНО:
-- isValid = true только если ВСЕ 4 параметра присутствуют
-- missingFields содержит список на русском языке того, чего не хватает
-- extractedData заполняется только если isValid = true`;
+    const userPrompt = `Описание пользователя: "${description}"`;
 
-  try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model,
       messages: [
         {
           role: "system",
-          content: "Ты помощник для проверки объявлений о продаже водной техники. Ты понимаешь русский язык.",
+          content: systemPrompt,
         },
         {
           role: "user",
-          content: prompt,
+          content: userPrompt,
         },
       ],
       temperature: 0.3,

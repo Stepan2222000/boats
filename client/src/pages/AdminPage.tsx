@@ -16,6 +16,24 @@ import type { AiSetting, Boat, PublicUser, BoatContact } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 const DEFAULT_SETTINGS = {
+  validationModel: "gpt-4o-mini",
+  validationPrompt: `Ты помощник для проверки объявлений о продаже водной техники. 
+Проверь, что пользователь предоставил все необходимые данные для публикации объявления:
+
+Обязательные поля:
+- Описание лодки/катера (хотя бы несколько слов)
+- Цена (в рублях)
+- Местоположение (город)
+
+Верни результат в формате JSON:
+{
+  "isValid": true/false,
+  "missingFields": ["поле1", "поле2"],
+  "extractedData": {
+    "price": число,
+    "location": "город"
+  }
+}`,
   listingModel: "gpt-4o-mini",
   searchModel: "gpt-4o-mini",
   listingPrompt: `Ты профессиональный копирайтер для премиального маркетплейса водной техники. 
@@ -57,6 +75,7 @@ export default function AdminPage() {
   const [selectedBoat, setSelectedBoat] = useState<Boat | null>(null);
   const [editingBoat, setEditingBoat] = useState<Boat | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   const { data: settings, isLoading } = useQuery<AiSetting[]>({
     queryKey: ['/api/admin/ai-settings'],
@@ -250,6 +269,11 @@ export default function AdminPage() {
   const approvedBoats = adminBoats?.filter(b => b.status === "approved") || [];
   const rejectedBoats = adminBoats?.filter(b => b.status === "rejected") || [];
 
+  // Filtered boats based on status filter
+  const filteredBoats = statusFilter 
+    ? adminBoats?.filter(b => b.status === statusFilter) || []
+    : adminBoats || [];
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -286,7 +310,11 @@ export default function AdminPage() {
 
           <TabsContent value="moderation" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
+              <Card 
+                className={`cursor-pointer hover-elevate transition-all ${statusFilter === "ai_processing" ? "ring-2 ring-blue-500" : ""}`}
+                onClick={() => setStatusFilter(statusFilter === "ai_processing" ? null : "ai_processing")}
+                data-testid="filter-ai-processing"
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-1">
                     <Loader2 className="w-4 h-4 text-blue-500" />
@@ -295,7 +323,11 @@ export default function AdminPage() {
                   <p className="text-2xl font-bold">{aiProcessingBoats.length}</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card 
+                className={`cursor-pointer hover-elevate transition-all ${statusFilter === "ai_ready" ? "ring-2 ring-green-500" : ""}`}
+                onClick={() => setStatusFilter(statusFilter === "ai_ready" ? null : "ai_ready")}
+                data-testid="filter-ai-ready"
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-1">
                     <Check className="w-4 h-4 text-green-500" />
@@ -304,7 +336,11 @@ export default function AdminPage() {
                   <p className="text-2xl font-bold">{aiReadyBoats.length}</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card 
+                className={`cursor-pointer hover-elevate transition-all ${statusFilter === "approved" ? "ring-2 ring-emerald-500" : ""}`}
+                onClick={() => setStatusFilter(statusFilter === "approved" ? null : "approved")}
+                data-testid="filter-approved"
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-1">
                     <Check className="w-4 h-4 text-emerald-500" />
@@ -313,7 +349,11 @@ export default function AdminPage() {
                   <p className="text-2xl font-bold">{approvedBoats.length}</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card 
+                className={`cursor-pointer hover-elevate transition-all ${statusFilter === "rejected" ? "ring-2 ring-destructive" : ""}`}
+                onClick={() => setStatusFilter(statusFilter === "rejected" ? null : "rejected")}
+                data-testid="filter-rejected"
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-1">
                     <X className="w-4 h-4 text-destructive" />
@@ -324,209 +364,195 @@ export default function AdminPage() {
               </Card>
             </div>
 
+            {statusFilter && (
+              <div className="flex items-center gap-2 mb-4">
+                <Badge variant="outline" className="gap-1">
+                  Фильтр: {
+                    statusFilter === "ai_processing" ? "AI обрабатывает" :
+                    statusFilter === "ai_ready" ? "Готово к модерации" :
+                    statusFilter === "approved" ? "Опубликовано" :
+                    "Отклонено"
+                  }
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setStatusFilter(null)}
+                  data-testid="button-clear-filter"
+                >
+                  <X className="w-3 h-3" />
+                  Сбросить
+                </Button>
+              </div>
+            )}
+
             {boatsLoading ? (
               <div className="flex items-center justify-center py-12">
                 <RefreshCw className="w-6 h-6 animate-spin text-primary" />
               </div>
+            ) : filteredBoats.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                {statusFilter ? `Нет объявлений со статусом "${statusFilter}"` : "Нет объявлений"}
+              </div>
             ) : (
-              <div className="space-y-6">
-                {/* AI Processing */}
-                {aiProcessingBoats.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
-                        AI обрабатывает ({aiProcessingBoats.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {aiProcessingBoats.map((boat) => (
-                        <Card key={boat.id} className="border-blue-200 bg-blue-50/50">
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h3 className="font-bold">{boat.title}</h3>
-                                  {getStatusBadge(boat.status)}
-                                </div>
-                                {boat.rawDescription && (
-                                  <div className="bg-muted p-3 rounded-lg mb-2">
-                                    <p className="text-xs text-muted-foreground mb-1">Промпт пользователя:</p>
-                                    <p className="text-sm whitespace-pre-wrap">{boat.rawDescription}</p>
-                                  </div>
-                                )}
-                              </div>
+              <div className="space-y-3">
+                {filteredBoats.map((boat) => (
+                  <Card 
+                    key={boat.id} 
+                    className={
+                      boat.status === "ai_processing" ? "border-blue-200 bg-blue-50/50" :
+                      boat.status === "ai_ready" ? "border-green-200 bg-green-50/50" :
+                      boat.status === "approved" ? "border-emerald-200 bg-emerald-50/50" :
+                      "border-destructive/30 bg-destructive/5"
+                    }
+                  >
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-bold text-lg">{boat.title}</h3>
+                              {getStatusBadge(boat.status)}
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                            {boat.description && (
+                              <p className="text-sm text-muted-foreground line-clamp-2">{boat.description}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {boat.aiError && (
+                          <div className="bg-destructive/10 p-3 rounded-lg flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
+                            <div>
+                              <p className="text-xs font-semibold text-destructive">Ошибка AI:</p>
+                              <p className="text-sm text-destructive">{boat.aiError}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {boat.rawDescription && (
+                          <div className="bg-muted p-3 rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">Промпт пользователя:</p>
+                            <p className="text-sm whitespace-pre-wrap">{boat.rawDescription}</p>
+                          </div>
+                        )}
+
+                        {boat.rejectionReason && (
+                          <div className="bg-destructive/10 p-3 rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">Причина отклонения:</p>
+                            <p className="text-sm text-destructive">{boat.rejectionReason}</p>
+                          </div>
+                        )}
+
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="secondary">{boat.price.toLocaleString()} {boat.currency}</Badge>
+                          <Badge variant="outline">{boat.year} год</Badge>
+                          <Badge variant="outline">{boat.location}</Badge>
+                          {boat.manufacturer && <Badge variant="outline">{boat.manufacturer}</Badge>}
+                          {boat.model && <Badge variant="outline">{boat.model}</Badge>}
+                        </div>
+
+                        <div className="flex gap-2 pt-2 border-t">
+                          <Button
+                            size="sm"
+                            onClick={() => setSelectedBoat(boat)}
+                            className="gap-1"
+                            data-testid={`button-view-${boat.id}`}
+                          >
+                            <Eye className="w-4 h-4" />
+                            Просмотр и модерация
+                          </Button>
+                          {boat.status === "ai_ready" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingBoat(boat)}
+                              className="gap-1"
+                              data-testid={`button-edit-${boat.id}`}
+                            >
+                              <Edit className="w-4 h-4" />
+                              Редактировать
+                            </Button>
+                          )}
+                          {boat.status === "approved" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setLocation(`/listing/${boat.id}`)}
+                              className="gap-1"
+                            >
+                              <Eye className="w-4 h-4" />
+                              На сайте
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
-                )}
-
-                {/* AI Ready */}
-                {aiReadyBoats.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-green-500" />
-                        Готово к модерации ({aiReadyBoats.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {aiReadyBoats.map((boat) => (
-                        <Card key={boat.id} className="border-green-200 bg-green-50/50">
-                          <CardContent className="p-4">
-                            <div className="space-y-3">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <h3 className="font-bold text-lg">{boat.title}</h3>
-                                    {getStatusBadge(boat.status)}
-                                  </div>
-                                  <p className="text-sm text-muted-foreground line-clamp-2">{boat.description}</p>
-                                </div>
-                              </div>
-
-                              {boat.aiError && (
-                                <div className="bg-destructive/10 p-3 rounded-lg flex items-start gap-2">
-                                  <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
-                                  <div>
-                                    <p className="text-xs font-semibold text-destructive">Ошибка AI:</p>
-                                    <p className="text-sm text-destructive">{boat.aiError}</p>
-                                  </div>
-                                </div>
-                              )}
-
-                              {boat.rawDescription && (
-                                <div className="bg-muted p-3 rounded-lg">
-                                  <p className="text-xs text-muted-foreground mb-1">Промпт пользователя:</p>
-                                  <p className="text-sm whitespace-pre-wrap">{boat.rawDescription}</p>
-                                </div>
-                              )}
-
-                              <div className="flex flex-wrap gap-2">
-                                <Badge variant="secondary">{boat.price.toLocaleString()} {boat.currency}</Badge>
-                                <Badge variant="outline">{boat.year} год</Badge>
-                                <Badge variant="outline">{boat.location}</Badge>
-                                {boat.manufacturer && <Badge variant="outline">{boat.manufacturer}</Badge>}
-                                {boat.model && <Badge variant="outline">{boat.model}</Badge>}
-                              </div>
-
-                              <div className="flex gap-2 pt-2 border-t">
-                                <Button
-                                  size="sm"
-                                  onClick={() => setSelectedBoat(boat)}
-                                  className="gap-1"
-                                  data-testid={`button-view-${boat.id}`}
-                                >
-                                  <Eye className="w-4 h-4" />
-                                  Просмотр и модерация
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setEditingBoat(boat)}
-                                  className="gap-1"
-                                  data-testid={`button-edit-${boat.id}`}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                  Редактировать
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Approved */}
-                {approvedBoats.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-emerald-500" />
-                        Опубликовано ({approvedBoats.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {approvedBoats.slice(0, 5).map((boat) => (
-                        <Card key={boat.id} className="border-emerald-200 bg-emerald-50/50">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-bold">{boat.title}</h3>
-                                  {getStatusBadge(boat.status)}
-                                </div>
-                                <p className="text-sm text-muted-foreground line-clamp-1">{boat.description}</p>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setLocation(`/listing/${boat.id}`)}
-                                className="gap-1"
-                              >
-                                <Eye className="w-4 h-4" />
-                                Просмотр
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                      {approvedBoats.length > 5 && (
-                        <p className="text-sm text-muted-foreground text-center">
-                          и еще {approvedBoats.length - 5}...
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Rejected */}
-                {rejectedBoats.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <X className="w-5 h-5 text-destructive" />
-                        Отклонено ({rejectedBoats.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {rejectedBoats.slice(0, 3).map((boat) => (
-                        <Card key={boat.id} className="border-destructive/30 bg-destructive/5">
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="font-bold">{boat.title}</h3>
-                                  {getStatusBadge(boat.status)}
-                                </div>
-                                {boat.rejectionReason && (
-                                  <p className="text-sm text-destructive">Причина: {boat.rejectionReason}</p>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {adminBoats?.length === 0 && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    Нет объявлений
-                  </div>
-                )}
+                ))}
               </div>
             )}
           </TabsContent>
 
           {/* Models Tab */}
           <TabsContent value="models" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Модель для валидации данных</CardTitle>
+                <CardDescription>
+                  Используется для первичной проверки данных перед созданием объявления
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {editMode['validationModel'] ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="validationModel">Модель</Label>
+                    <Input
+                      id="validationModel"
+                      defaultValue={getSetting('validationModel')}
+                      placeholder="gpt-4o-mini"
+                      data-testid="input-validation-model"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const input = document.getElementById('validationModel') as HTMLInputElement;
+                          handleSave('validationModel', input.value);
+                        }}
+                        data-testid="button-save-validation-model"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Сохранить
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setEditMode({ ...editMode, validationModel: false })}
+                        data-testid="button-cancel-validation-model"
+                      >
+                        Отмена
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-mono text-sm">{getSetting('validationModel')}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditMode({ ...editMode, validationModel: true })}
+                      data-testid="button-edit-validation-model"
+                    >
+                      Изменить
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Модель для создания объявлений</CardTitle>
@@ -644,6 +670,64 @@ export default function AdminPage() {
 
           {/* Prompts Tab */}
           <TabsContent value="prompts" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Промпт для валидации данных</CardTitle>
+                <CardDescription>
+                  Системный промпт для первичной проверки данных перед созданием объявления
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {editMode['validationPrompt'] ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="validationPrompt">Промпт</Label>
+                    <Textarea
+                      id="validationPrompt"
+                      defaultValue={getSetting('validationPrompt')}
+                      rows={10}
+                      className="font-mono text-sm"
+                      data-testid="textarea-validation-prompt"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const textarea = document.getElementById('validationPrompt') as HTMLTextAreaElement;
+                          handleSave('validationPrompt', textarea.value);
+                        }}
+                        data-testid="button-save-validation-prompt"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Сохранить
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setEditMode({ ...editMode, validationPrompt: false })}
+                        data-testid="button-cancel-validation-prompt"
+                      >
+                        Отмена
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <pre className="p-4 bg-muted rounded-lg text-xs overflow-auto max-h-60">
+                      {getSetting('validationPrompt')}
+                    </pre>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditMode({ ...editMode, validationPrompt: true })}
+                      data-testid="button-edit-validation-prompt"
+                    >
+                      Изменить
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Промпт для создания объявлений</CardTitle>
