@@ -38,7 +38,10 @@ export const registerUserSchema = z.object({
 });
 
 export const loginUserSchema = z.object({
-  phone: z.string().regex(/^\+7\d{10}$/, "Номер телефона должен быть в формате +7XXXXXXXXXX"),
+  phone: z.string().refine(
+    (val) => val === "root" || /^\+7\d{10}$/.test(val),
+    "Номер телефона должен быть в формате +7XXXXXXXXXX"
+  ),
   password: z.string().min(1, "Введите пароль"),
 });
 

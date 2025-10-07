@@ -76,8 +76,8 @@ export default function AdminPage() {
   const [editingBoat, setEditingBoat] = useState<Boat | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [adminPhone, setAdminPhone] = useState("root");
-  const [adminPassword, setAdminPassword] = useState("root");
+  const [adminPhone, setAdminPhone] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Check current user
