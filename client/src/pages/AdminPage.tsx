@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import Header from "@/components/Header";
@@ -9,10 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Sparkles, Save, RefreshCw, Package, Edit, Trash2, Eye, Users } from "lucide-react";
+import { Settings, Sparkles, Save, RefreshCw, Package, Edit, Trash2, Eye, Users, Check, X, AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { AiSetting, Boat, PublicUser } from "@shared/schema";
+import type { AiSetting, Boat, PublicUser, BoatContact } from "@shared/schema";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 const DEFAULT_SETTINGS = {
   listingModel: "gpt-4o-mini",
@@ -34,38 +35,104 @@ const DEFAULT_SETTINGS = {
 - Ключевые слова для текстового поиска (производитель, модель, характеристики, особенности)`
 };
 
+function getStatusBadge(status: string) {
+  switch (status) {
+    case "ai_processing":
+      return <Badge className="bg-blue-500 hover:bg-blue-600 gap-1"><Loader2 className="w-3 h-3 animate-spin" />AI обрабатывает</Badge>;
+    case "ai_ready":
+      return <Badge className="bg-green-500 hover:bg-green-600 gap-1"><Check className="w-3 h-3" />Готово к модерации</Badge>;
+    case "approved":
+      return <Badge className="bg-emerald-500 hover:bg-emerald-600 gap-1"><Check className="w-3 h-3" />Опубликовано</Badge>;
+    case "rejected":
+      return <Badge variant="destructive" className="gap-1"><X className="w-3 h-3" />Отклонено</Badge>;
+    default:
+      return <Badge variant="outline">{status}</Badge>;
+  }
+}
+
 export default function AdminPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [editMode, setEditMode] = useState<Record<string, boolean>>({});
+  const [selectedBoat, setSelectedBoat] = useState<Boat | null>(null);
+  const [editingBoat, setEditingBoat] = useState<Boat | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const { data: settings, isLoading } = useQuery<AiSetting[]>({
     queryKey: ['/api/admin/ai-settings'],
   });
 
-  const { data: boats, isLoading: boatsLoading } = useQuery<Boat[]>({
-    queryKey: ['/api/boats'],
+  const { data: adminBoats, isLoading: boatsLoading } = useQuery<Boat[]>({
+    queryKey: ['/api/admin/boats'],
   });
 
   const { data: users, isLoading: usersLoading } = useQuery<PublicUser[]>({
     queryKey: ['/api/admin/users'],
   });
 
-  const { data: pendingBoats, isLoading: pendingLoading } = useQuery<Boat[]>({
-    queryKey: ['/api/admin/pending'],
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'boat_update') {
+        console.log('Boat update received:', data);
+        // Invalidate queries to refetch updated data
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/boats'] });
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
+
+  const updateBoatMutation = useMutation({
+    mutationFn: async (data: { id: string; updates: Partial<Boat> }) => {
+      return await apiRequest('PUT', `/api/admin/boats/${data.id}`, data.updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/boats'] });
+      toast({
+        title: "Объявление обновлено",
+        description: "Изменения успешно сохранены",
+      });
+      setEditingBoat(null);
+    },
+    onError: () => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить объявление",
+        variant: "destructive",
+      });
+    },
   });
 
   const approveMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest('PUT', `/api/boats/${id}/approve`);
+      return await apiRequest('POST', `/api/admin/boats/${id}/approve`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/pending'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/boats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/boats'] });
       toast({
         title: "Объявление одобрено",
         description: "Объявление успешно опубликовано",
       });
+      setSelectedBoat(null);
     },
     onError: () => {
       toast({
@@ -77,15 +144,17 @@ export default function AdminPage() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await apiRequest('PUT', `/api/boats/${id}/reject`);
+    mutationFn: async (data: { id: string; reason: string }) => {
+      return await apiRequest('POST', `/api/admin/boats/${data.id}/reject`, { reason: data.reason });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/pending'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/boats'] });
       toast({
         title: "Объявление отклонено",
         description: "Объявление успешно отклонено",
       });
+      setSelectedBoat(null);
+      setRejectReason("");
     },
     onError: () => {
       toast({
@@ -96,7 +165,7 @@ export default function AdminPage() {
     },
   });
 
-  const updateMutation = useMutation({
+  const updateSettingsMutation = useMutation({
     mutationFn: async (data: { key: string; value: string }) => {
       const response = await apiRequest('PUT', '/api/admin/ai-settings', data);
       return response.json();
@@ -124,8 +193,14 @@ export default function AdminPage() {
   };
 
   const handleSave = (key: string, value: string) => {
-    updateMutation.mutate({ key, value });
+    updateSettingsMutation.mutate({ key, value });
   };
+
+  // Get contacts for selected boat
+  const { data: contacts } = useQuery<BoatContact[]>({
+    queryKey: ['/api/boats', selectedBoat?.id, 'contacts'],
+    enabled: !!selectedBoat,
+  });
 
   if (isLoading) {
     return (
@@ -140,6 +215,11 @@ export default function AdminPage() {
     );
   }
 
+  const aiProcessingBoats = adminBoats?.filter(b => b.status === "ai_processing") || [];
+  const aiReadyBoats = adminBoats?.filter(b => b.status === "ai_ready") || [];
+  const approvedBoats = adminBoats?.filter(b => b.status === "approved") || [];
+  const rejectedBoats = adminBoats?.filter(b => b.status === "rejected") || [];
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -152,7 +232,7 @@ export default function AdminPage() {
             </div>
             <h1 className="text-3xl font-black">Админ-панель</h1>
           </div>
-          <p className="text-muted-foreground">Настройки AI моделей и промптов</p>
+          <p className="text-muted-foreground">Управление объявлениями и настройками</p>
         </div>
 
         <Tabs defaultValue="moderation" className="space-y-4">
@@ -172,130 +252,250 @@ export default function AdminPage() {
               <Users className="w-4 h-4 mr-2" />
               Пользователи
             </TabsTrigger>
-            <TabsTrigger value="listings" data-testid="tab-listings">
-              <Package className="w-4 h-4 mr-2" />
-              Объявления
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="moderation" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Модерация объявлений</CardTitle>
-                <CardDescription>
-                  Объявления ожидающие проверки и публикации
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {pendingLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Loader2 className="w-4 h-4 text-blue-500" />
+                    <p className="text-sm text-muted-foreground">AI обрабатывает</p>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground">Ожидает модерации</p>
-                      <p className="text-2xl font-bold">{pendingBoats?.length || 0}</p>
-                    </div>
+                  <p className="text-2xl font-bold">{aiProcessingBoats.length}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Check className="w-4 h-4 text-green-500" />
+                    <p className="text-sm text-muted-foreground">Готово к модерации</p>
+                  </div>
+                  <p className="text-2xl font-bold">{aiReadyBoats.length}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Check className="w-4 h-4 text-emerald-500" />
+                    <p className="text-sm text-muted-foreground">Опубликовано</p>
+                  </div>
+                  <p className="text-2xl font-bold">{approvedBoats.length}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <X className="w-4 h-4 text-destructive" />
+                    <p className="text-sm text-muted-foreground">Отклонено</p>
+                  </div>
+                  <p className="text-2xl font-bold">{rejectedBoats.length}</p>
+                </CardContent>
+              </Card>
+            </div>
 
-                    <div className="space-y-3">
-                      {pendingBoats?.map((boat) => (
-                        <Card key={boat.id} className="border-orange-200">
+            {boatsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* AI Processing */}
+                {aiProcessingBoats.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                        AI обрабатывает ({aiProcessingBoats.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {aiProcessingBoats.map((boat) => (
+                        <Card key={boat.id} className="border-blue-200 bg-blue-50/50">
                           <CardContent className="p-4">
-                            <div className="space-y-4">
-                              <div>
-                                <div className="flex items-start justify-between mb-2">
-                                  <div className="flex-1">
-                                    <h3 className="font-bold text-lg">{boat.title}</h3>
-                                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                                      {boat.description}
-                                    </p>
-                                  </div>
-                                  <Badge variant="outline" className="ml-2 border-orange-400 text-orange-600">
-                                    На модерации
-                                  </Badge>
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h3 className="font-bold">{boat.title}</h3>
+                                  {getStatusBadge(boat.status)}
                                 </div>
-                                
-                                <div className="flex flex-wrap gap-2 text-xs mt-3">
-                                  <Badge variant="secondary">
-                                    {boat.price.toLocaleString()} {boat.currency}
-                                  </Badge>
-                                  <Badge variant="outline">{boat.year} год</Badge>
-                                  <Badge variant="outline">{boat.location}</Badge>
-                                  {boat.boatType && <Badge variant="outline">{boat.boatType}</Badge>}
-                                  {boat.manufacturer && <Badge variant="outline">{boat.manufacturer}</Badge>}
-                                  {boat.model && <Badge variant="outline">{boat.model}</Badge>}
+                                {boat.rawDescription && (
+                                  <div className="bg-muted p-3 rounded-lg mb-2">
+                                    <p className="text-xs text-muted-foreground mb-1">Промпт пользователя:</p>
+                                    <p className="text-sm whitespace-pre-wrap">{boat.rawDescription}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* AI Ready */}
+                {aiReadyBoats.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Check className="w-5 h-5 text-green-500" />
+                        Готово к модерации ({aiReadyBoats.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {aiReadyBoats.map((boat) => (
+                        <Card key={boat.id} className="border-green-200 bg-green-50/50">
+                          <CardContent className="p-4">
+                            <div className="space-y-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="font-bold text-lg">{boat.title}</h3>
+                                    {getStatusBadge(boat.status)}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground line-clamp-2">{boat.description}</p>
                                 </div>
                               </div>
 
-                              {boat.originalDescription && (
-                                <div className="bg-muted p-3 rounded-lg">
-                                  <p className="text-xs text-muted-foreground mb-1">Исходное описание от пользователя:</p>
-                                  <p className="text-sm whitespace-pre-wrap">{boat.originalDescription}</p>
+                              {boat.aiError && (
+                                <div className="bg-destructive/10 p-3 rounded-lg flex items-start gap-2">
+                                  <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
+                                  <div>
+                                    <p className="text-xs font-semibold text-destructive">Ошибка AI:</p>
+                                    <p className="text-sm text-destructive">{boat.aiError}</p>
+                                  </div>
                                 </div>
                               )}
+
+                              {boat.rawDescription && (
+                                <div className="bg-muted p-3 rounded-lg">
+                                  <p className="text-xs text-muted-foreground mb-1">Промпт пользователя:</p>
+                                  <p className="text-sm whitespace-pre-wrap">{boat.rawDescription}</p>
+                                </div>
+                              )}
+
+                              <div className="flex flex-wrap gap-2">
+                                <Badge variant="secondary">{boat.price.toLocaleString()} {boat.currency}</Badge>
+                                <Badge variant="outline">{boat.year} год</Badge>
+                                <Badge variant="outline">{boat.location}</Badge>
+                                {boat.manufacturer && <Badge variant="outline">{boat.manufacturer}</Badge>}
+                                {boat.model && <Badge variant="outline">{boat.model}</Badge>}
+                              </div>
 
                               <div className="flex gap-2 pt-2 border-t">
                                 <Button
                                   size="sm"
-                                  variant="default"
-                                  onClick={() => approveMutation.mutate(boat.id)}
-                                  disabled={approveMutation.isPending}
+                                  onClick={() => setSelectedBoat(boat)}
                                   className="gap-1"
-                                  data-testid={`button-approve-${boat.id}`}
+                                  data-testid={`button-view-${boat.id}`}
                                 >
                                   <Eye className="w-4 h-4" />
-                                  Одобрить
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => rejectMutation.mutate(boat.id)}
-                                  disabled={rejectMutation.isPending}
-                                  className="gap-1"
-                                  data-testid={`button-reject-${boat.id}`}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Отклонить
+                                  Просмотр и модерация
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => setLocation(`/edit/${boat.id}`)}
+                                  onClick={() => setEditingBoat(boat)}
                                   className="gap-1"
-                                  data-testid={`button-edit-pending-${boat.id}`}
+                                  data-testid={`button-edit-${boat.id}`}
                                 >
                                   <Edit className="w-4 h-4" />
                                   Редактировать
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setLocation(`/listing/${boat.id}`)}
-                                  className="gap-1"
-                                  data-testid={`button-view-pending-${boat.id}`}
-                                >
-                                  <Eye className="w-4 h-4" />
-                                  Просмотр
                                 </Button>
                               </div>
                             </div>
                           </CardContent>
                         </Card>
                       ))}
+                    </CardContent>
+                  </Card>
+                )}
 
-                      {pendingBoats?.length === 0 && (
-                        <div className="text-center py-12 text-muted-foreground">
-                          Нет объявлений на модерации
-                        </div>
+                {/* Approved */}
+                {approvedBoats.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Check className="w-5 h-5 text-emerald-500" />
+                        Опубликовано ({approvedBoats.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {approvedBoats.slice(0, 5).map((boat) => (
+                        <Card key={boat.id} className="border-emerald-200 bg-emerald-50/50">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-bold">{boat.title}</h3>
+                                  {getStatusBadge(boat.status)}
+                                </div>
+                                <p className="text-sm text-muted-foreground line-clamp-1">{boat.description}</p>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setLocation(`/listing/${boat.id}`)}
+                                className="gap-1"
+                              >
+                                <Eye className="w-4 h-4" />
+                                Просмотр
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {approvedBoats.length > 5 && (
+                        <p className="text-sm text-muted-foreground text-center">
+                          и еще {approvedBoats.length - 5}...
+                        </p>
                       )}
-                    </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Rejected */}
+                {rejectedBoats.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <X className="w-5 h-5 text-destructive" />
+                        Отклонено ({rejectedBoats.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {rejectedBoats.slice(0, 3).map((boat) => (
+                        <Card key={boat.id} className="border-destructive/30 bg-destructive/5">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-bold">{boat.title}</h3>
+                                  {getStatusBadge(boat.status)}
+                                </div>
+                                {boat.rejectionReason && (
+                                  <p className="text-sm text-destructive">Причина: {boat.rejectionReason}</p>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {adminBoats?.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    Нет объявлений
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            )}
           </TabsContent>
 
+          {/* Models Tab */}
           <TabsContent value="models" className="space-y-4">
             <Card>
               <CardHeader>
@@ -412,6 +612,7 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
+          {/* Prompts Tab */}
           <TabsContent value="prompts" className="space-y-4">
             <Card>
               <CardHeader>
@@ -530,13 +731,12 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
+          {/* Users Tab */}
           <TabsContent value="users" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Пользователи системы</CardTitle>
-                <CardDescription>
-                  Все зарегистрированные пользователи
-                </CardDescription>
+                <CardTitle>Пользователи</CardTitle>
+                <CardDescription>Зарегистрированные пользователи платформы</CardDescription>
               </CardHeader>
               <CardContent>
                 {usersLoading ? (
@@ -544,164 +744,22 @@ export default function AdminPage() {
                     <RefreshCw className="w-6 h-6 animate-spin text-primary" />
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Всего пользователей</p>
-                        <p className="text-2xl font-bold">{users?.length || 0}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Новых за сегодня</p>
-                        <p className="text-2xl font-bold">
-                          {users?.filter(u => {
-                            const createdDate = new Date(u.createdAt!);
-                            const today = new Date();
-                            return createdDate.toDateString() === today.toDateString();
-                          }).length || 0}
-                        </p>
-                      </div>
+                  <div className="space-y-2">
+                    <div className="p-4 bg-muted rounded-lg mb-4">
+                      <p className="text-sm text-muted-foreground">Всего пользователей</p>
+                      <p className="text-2xl font-bold">{users?.length || 0}</p>
                     </div>
 
-                    <div className="space-y-2">
-                      {users?.map((user) => (
-                        <Card key={user.id} className="hover-elevate">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between gap-4">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3">
-                                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <Users className="w-5 h-5 text-primary" />
-                                  </div>
-                                  <div>
-                                    <p className="font-semibold">{user.phone}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                      ID: {user.id}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-xs text-muted-foreground">
-                                  Зарегистрирован
-                                </p>
-                                <p className="text-sm font-medium">
-                                  {new Date(user.createdAt!).toLocaleDateString('ru-RU', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric'
-                                  })}
-                                </p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                      {users && users.length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground">
-                          Пока нет зарегистрированных пользователей
+                    {users?.map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{user.phone}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Зарегистрирован: {new Date(user.createdAt!).toLocaleDateString('ru-RU')}
+                          </p>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="listings" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Управление объявлениями</CardTitle>
-                <CardDescription>
-                  Все объявления на платформе с статистикой просмотров
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {boatsLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <RefreshCw className="w-6 h-6 animate-spin text-primary" />
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Всего объявлений</p>
-                        <p className="text-2xl font-bold">{boats?.length || 0}</p>
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Всего просмотров</p>
-                        <p className="text-2xl font-bold">
-                          {boats?.reduce((sum, boat) => sum + (boat.viewCount || 0), 0) || 0}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Средняя цена</p>
-                        <p className="text-2xl font-bold">
-                          {boats && boats.length > 0
-                            ? Math.round(boats.reduce((sum, boat) => sum + boat.price, 0) / boats.length).toLocaleString()
-                            : 0}{" "}
-                          ₽
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      {boats?.map((boat) => (
-                        <Card key={boat.id} className="hover-elevate">
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <h3 className="font-bold mb-1">{boat.title}</h3>
-                                <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
-                                  {boat.description}
-                                </p>
-                                <div className="flex flex-wrap gap-2 text-xs">
-                                  <Badge variant="secondary">
-                                    {boat.price.toLocaleString()} {boat.currency}
-                                  </Badge>
-                                  <Badge variant="outline">{boat.year} год</Badge>
-                                  <Badge variant="outline">{boat.location}</Badge>
-                                  {boat.boatType && <Badge variant="outline">{boat.boatType}</Badge>}
-                                  <Badge variant="outline" className="gap-1">
-                                    <Eye className="w-3 h-3" />
-                                    {boat.viewCount || 0} просмотров
-                                  </Badge>
-                                  {boat.isPromoted && <Badge>Продвигается</Badge>}
-                                </div>
-                              </div>
-                              <div className="flex flex-col gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setLocation(`/listing/${boat.id}`)}
-                                  className="gap-1"
-                                  data-testid={`button-view-${boat.id}`}
-                                >
-                                  <Eye className="w-4 h-4" />
-                                  Просмотр
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setLocation(`/edit/${boat.id}`)}
-                                  className="gap-1"
-                                  data-testid={`button-admin-edit-${boat.id}`}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                  Изменить
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                      
-                      {boats?.length === 0 && (
-                        <div className="text-center py-12 text-muted-foreground">
-                          Объявлений пока нет
-                        </div>
-                      )}
-                    </div>
+                    ))}
                   </div>
                 )}
               </CardContent>
@@ -709,6 +767,227 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Moderation Dialog */}
+      <Dialog open={!!selectedBoat} onOpenChange={(open) => !open && setSelectedBoat(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Модерация объявления</DialogTitle>
+            <DialogDescription>
+              Проверьте информацию и примите решение
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedBoat && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-bold text-lg mb-2">{selectedBoat.title}</h3>
+                <p className="text-sm text-muted-foreground">{selectedBoat.description}</p>
+              </div>
+
+              {selectedBoat.rawDescription && (
+                <div className="bg-muted p-4 rounded-lg">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">Промпт пользователя:</p>
+                  <p className="text-sm whitespace-pre-wrap">{selectedBoat.rawDescription}</p>
+                </div>
+              )}
+
+              {selectedBoat.aiError && (
+                <div className="bg-destructive/10 p-4 rounded-lg">
+                  <p className="text-xs font-semibold text-destructive mb-2">Ошибка AI:</p>
+                  <p className="text-sm text-destructive">{selectedBoat.aiError}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Цена</p>
+                  <p className="font-semibold">{selectedBoat.price.toLocaleString()} {selectedBoat.currency}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Год</p>
+                  <p className="font-semibold">{selectedBoat.year}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Местоположение</p>
+                  <p className="font-semibold">{selectedBoat.location}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Тип</p>
+                  <p className="font-semibold">{selectedBoat.boatType || "Не указано"}</p>
+                </div>
+              </div>
+
+              {contacts && contacts.length > 0 && (
+                <div className="bg-muted p-4 rounded-lg">
+                  <p className="text-xs font-semibold text-muted-foreground mb-3">Контакты:</p>
+                  <div className="space-y-2">
+                    {contacts.map((contact) => (
+                      <div key={contact.id} className="flex items-center gap-2">
+                        <Badge variant="outline">{contact.contactType}</Badge>
+                        <span className="font-mono text-sm">{contact.contactValue}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedBoat.photoUrls && selectedBoat.photoUrls.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">Фотографии:</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {selectedBoat.photoUrls.map((url, idx) => (
+                      <img
+                        key={idx}
+                        src={url}
+                        alt={`Фото ${idx + 1}`}
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3 pt-4 border-t">
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => approveMutation.mutate(selectedBoat.id)}
+                    disabled={approveMutation.isPending}
+                    className="flex-1 gap-2"
+                    data-testid="button-approve-modal"
+                  >
+                    <Check className="w-4 h-4" />
+                    Одобрить и опубликовать
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setEditingBoat(selectedBoat)}
+                    className="gap-2"
+                    data-testid="button-edit-modal"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Редактировать
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="rejectReason">Причина отклонения (опционально)</Label>
+                  <Textarea
+                    id="rejectReason"
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder="Укажите причину отклонения..."
+                    rows={3}
+                    data-testid="textarea-reject-reason"
+                  />
+                  <Button
+                    variant="destructive"
+                    onClick={() => rejectMutation.mutate({ id: selectedBoat.id, reason: rejectReason })}
+                    disabled={rejectMutation.isPending}
+                    className="w-full gap-2"
+                    data-testid="button-reject-modal"
+                  >
+                    <X className="w-4 h-4" />
+                    Отклонить объявление
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingBoat} onOpenChange={(open) => !open && setEditingBoat(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Редактировать объявление</DialogTitle>
+          </DialogHeader>
+
+          {editingBoat && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-title">Заголовок</Label>
+                <Input
+                  id="edit-title"
+                  defaultValue={editingBoat.title}
+                  data-testid="input-edit-title"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Описание</Label>
+                <Textarea
+                  id="edit-description"
+                  defaultValue={editingBoat.description}
+                  rows={5}
+                  data-testid="textarea-edit-description"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-price">Цена</Label>
+                  <Input
+                    id="edit-price"
+                    type="number"
+                    defaultValue={editingBoat.price}
+                    data-testid="input-edit-price"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-year">Год</Label>
+                  <Input
+                    id="edit-year"
+                    type="number"
+                    defaultValue={editingBoat.year}
+                    data-testid="input-edit-year"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-location">Местоположение</Label>
+                <Input
+                  id="edit-location"
+                  defaultValue={editingBoat.location}
+                  data-testid="input-edit-location"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    const title = (document.getElementById('edit-title') as HTMLInputElement).value;
+                    const description = (document.getElementById('edit-description') as HTMLTextAreaElement).value;
+                    const price = parseInt((document.getElementById('edit-price') as HTMLInputElement).value);
+                    const year = parseInt((document.getElementById('edit-year') as HTMLInputElement).value);
+                    const location = (document.getElementById('edit-location') as HTMLInputElement).value;
+
+                    updateBoatMutation.mutate({
+                      id: editingBoat.id,
+                      updates: { title, description, price, year, location }
+                    });
+                  }}
+                  disabled={updateBoatMutation.isPending}
+                  className="flex-1"
+                  data-testid="button-save-edit"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Сохранить изменения
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setEditingBoat(null)}
+                  data-testid="button-cancel-edit"
+                >
+                  Отмена
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
