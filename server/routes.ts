@@ -135,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/boats", async (req, res) => {
     try {
-      const boats = await storage.getAllBoats();
+      const boats = await storage.getBoatsByStatus("approved");
       res.json(boats);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -430,8 +430,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
         title: basicTitle,
         description: result.data.rawDescription,
-        originalDescription: result.data.rawDescription,
-        status: "pending_moderation" as const,
+        rawDescription: result.data.rawDescription,
+        status: "ai_processing" as const,
         price: result.data.extractedData.price,
         currency: "₽" as const,
         year: result.data.extractedData.year,
@@ -474,12 +474,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             model: aiResult.model || boatData.model,
             boatType: aiResult.boatType,
             length: aiResult.length,
+            status: "ai_ready" as const,
           });
           console.log(`AI processing completed for boat ${boat.id}`);
         })
         .catch((error) => {
           console.error(`AI processing failed for boat ${boat.id}:`, error);
-          // Не падаем - объявление уже создано
+          // Сохраняем ошибку в базе
+          storage.updateBoat(boat.id, {
+            aiError: error.message || "Unknown AI processing error",
+            status: "ai_ready" as const,
+          }).catch(err => console.error("Failed to save AI error:", err));
         });
 
       // Сразу возвращаем успех
@@ -535,6 +540,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Get all boats (including all statuses)
+  app.get("/api/admin/boats", isAdmin, async (req, res) => {
+    try {
+      const boats = await storage.getAllBoats();
+      res.json(boats);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Edit any boat
+  app.put("/api/admin/boats/:id", isAdmin, async (req, res) => {
+    try {
+      const result = insertBoatSchema.partial().safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: fromZodError(result.error).message 
+        });
+      }
+
+      const updatedBoat = await storage.updateBoat(req.params.id, result.data);
+      if (!updatedBoat) {
+        return res.status(404).json({ error: "Boat not found" });
+      }
+      res.json(updatedBoat);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Approve boat
+  app.post("/api/admin/boats/:id/approve", isAdmin, async (req, res) => {
+    try {
+      const boat = await storage.updateBoat(req.params.id, { status: "approved" });
+      if (!boat) {
+        return res.status(404).json({ error: "Boat not found" });
+      }
+      res.json(boat);
+    } catch (error: any) {
+      console.error("Error approving boat:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Reject boat
+  app.post("/api/admin/boats/:id/reject", isAdmin, async (req, res) => {
+    try {
+      const rejectSchema = z.object({
+        reason: z.string().optional(),
+      });
+
+      const result = rejectSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: fromZodError(result.error).message 
+        });
+      }
+
+      const boat = await storage.updateBoat(req.params.id, { 
+        status: "rejected",
+        rejectionReason: result.data.reason || "Не указана",
+      });
+      if (!boat) {
+        return res.status(404).json({ error: "Boat not found" });
+      }
+      res.json(boat);
+    } catch (error: any) {
+      console.error("Error rejecting boat:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/admin/users", isAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
@@ -579,41 +657,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/pending", isAdmin, async (req, res) => {
-    try {
-      const boats = await storage.getBoatsByStatus("pending_moderation");
-      res.json(boats);
-    } catch (error: any) {
-      console.error("Error fetching pending boats:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.put("/api/boats/:id/approve", isAdmin, async (req, res) => {
-    try {
-      const boat = await storage.updateBoatStatus(req.params.id, "approved");
-      if (!boat) {
-        return res.status(404).json({ error: "Boat not found" });
-      }
-      res.json(boat);
-    } catch (error: any) {
-      console.error("Error approving boat:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.put("/api/boats/:id/reject", isAdmin, async (req, res) => {
-    try {
-      const boat = await storage.updateBoatStatus(req.params.id, "rejected");
-      if (!boat) {
-        return res.status(404).json({ error: "Boat not found" });
-      }
-      res.json(boat);
-    } catch (error: any) {
-      console.error("Error rejecting boat:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
 
   const httpServer = createServer(app);
 
