@@ -70,34 +70,64 @@ export default function AdminPage() {
     queryKey: ['/api/admin/users'],
   });
 
-  // WebSocket connection for real-time updates
+  // WebSocket connection for real-time updates with reconnection logic
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: NodeJS.Timeout | undefined;
+    let reconnectAttempts = 0;
+    let shouldReconnect = true;
+    const maxReconnectAttempts = 10;
 
-    ws.onopen = () => {
-      console.log('WebSocket connected');
+    const connect = () => {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        reconnectAttempts = 0;
+        reconnectTimeout = undefined;
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'boat_update') {
+          console.log('Boat update received:', data);
+          // Invalidate queries to refetch updated data
+          queryClient.invalidateQueries({ queryKey: ['/api/admin/boats'] });
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected');
+        
+        // Only reconnect if component is still mounted
+        if (shouldReconnect && reconnectAttempts < maxReconnectAttempts) {
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+          reconnectAttempts++;
+          console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
+          reconnectTimeout = setTimeout(connect, delay);
+        } else if (!shouldReconnect) {
+          console.log('Component unmounted, skipping reconnection');
+        } else {
+          console.error('Max reconnection attempts reached');
+        }
+      };
     };
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'boat_update') {
-        console.log('Boat update received:', data);
-        // Invalidate queries to refetch updated data
-        queryClient.invalidateQueries({ queryKey: ['/api/admin/boats'] });
-      }
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
-    };
+    connect();
 
     return () => {
-      ws.close();
+      shouldReconnect = false;
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (ws) {
+        ws.close();
+      }
     };
   }, []);
 

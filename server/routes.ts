@@ -365,8 +365,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/boats/:id/contacts", async (req, res) => {
+  app.get("/api/boats/:id/contacts", async (req: any, res) => {
     try {
+      // Allow admin to access contacts
+      const isAdminUser = req.session?.userId ? 
+        (await storage.getUser(req.session.userId))?.phone === "root" : false;
+      
+      if (!isAdminUser) {
+        // For non-admin, you might want to add additional checks here
+        // For now, allow public access as per original design
+      }
+      
       const contacts = await storage.getBoatContacts(req.params.id);
       res.json(contacts);
     } catch (error: any) {
@@ -569,6 +578,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedBoat) {
         return res.status(404).json({ error: "Boat not found" });
       }
+      broadcastBoatUpdate(req.params.id, updatedBoat.status);
       res.json(updatedBoat);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
