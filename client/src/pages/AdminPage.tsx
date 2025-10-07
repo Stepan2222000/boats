@@ -76,18 +76,71 @@ export default function AdminPage() {
   const [editingBoat, setEditingBoat] = useState<Boat | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [adminPhone, setAdminPhone] = useState("root");
+  const [adminPassword, setAdminPassword] = useState("root");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const { data: settings, isLoading } = useQuery<AiSetting[]>({
+  // Check current user
+  const { data: currentUser, isLoading: userLoading } = useQuery<{ authenticated: boolean; user?: PublicUser }>({
+    queryKey: ['/api/auth/user'],
+  });
+
+  const isAdmin = currentUser?.authenticated && currentUser.user?.phone === "root";
+
+  const { data: settings, isLoading, refetch: refetchSettings } = useQuery<AiSetting[]>({
     queryKey: ['/api/admin/ai-settings'],
+    enabled: isAdmin,
   });
 
-  const { data: adminBoats, isLoading: boatsLoading } = useQuery<Boat[]>({
+  const { data: adminBoats, isLoading: boatsLoading, refetch: refetchBoats } = useQuery<Boat[]>({
     queryKey: ['/api/admin/boats'],
+    enabled: isAdmin,
   });
 
-  const { data: users, isLoading: usersLoading } = useQuery<PublicUser[]>({
+  const { data: users, isLoading: usersLoading, refetch: refetchUsers } = useQuery<PublicUser[]>({
     queryKey: ['/api/admin/users'],
+    enabled: isAdmin,
   });
+
+  // Admin login handler
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+
+    try {
+      const res = await apiRequest('POST', '/api/login', {
+        phone: adminPhone,
+        password: adminPassword,
+      });
+      const data = await res.json() as { authenticated: boolean; user: PublicUser };
+
+      if (data.authenticated && data.user.phone === "root") {
+        toast({
+          title: "Успешный вход",
+          description: "Добро пожаловать в админ-панель",
+        });
+        // Refetch all data after login
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+        refetchSettings();
+        refetchBoats();
+        refetchUsers();
+      } else {
+        toast({
+          title: "Доступ запрещен",
+          description: "Только администраторы могут войти в панель",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Ошибка входа",
+        description: error.message || "Неверный логин или пароль",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
 
   // WebSocket connection for real-time updates with reconnection logic
   useEffect(() => {
@@ -250,6 +303,87 @@ export default function AdminPage() {
     queryKey: ['/api/boats', selectedBoat?.id, 'contacts'],
     enabled: !!selectedBoat,
   });
+
+  // Show loading while checking user
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-center py-20">
+            <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show admin login form if not authenticated as root
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+        <Header />
+        <div className="max-w-md mx-auto px-4 py-20">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Settings className="w-6 h-6 text-primary" />
+                </div>
+                <CardTitle className="text-2xl font-black">Вход для администратора</CardTitle>
+              </div>
+              <CardDescription>
+                Введите учетные данные для доступа к админ-панели
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleAdminLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-phone">Логин</Label>
+                  <Input
+                    id="admin-phone"
+                    type="text"
+                    value={adminPhone}
+                    onChange={(e) => setAdminPhone(e.target.value)}
+                    placeholder="root"
+                    required
+                    data-testid="input-admin-phone"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password">Пароль</Label>
+                  <Input
+                    id="admin-password"
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    placeholder="••••••"
+                    required
+                    data-testid="input-admin-password"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoggingIn}
+                  data-testid="button-admin-login"
+                >
+                  {isLoggingIn ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Вход...
+                    </>
+                  ) : (
+                    "Войти"
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
