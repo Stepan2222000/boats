@@ -66,7 +66,7 @@ export class DbStorage implements IStorage {
   }
 
   async getAllBoats(): Promise<Boat[]> {
-    return await db.select().from(boats).where(eq(boats.status, "approved")).orderBy(desc(boats.createdAt));
+    return await db.select().from(boats).orderBy(desc(boats.createdAt));
   }
 
   async getBoatsByStatus(status: string): Promise<Boat[]> {
