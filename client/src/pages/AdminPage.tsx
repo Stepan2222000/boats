@@ -431,10 +431,7 @@ export default function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="models" data-testid="tab-models">
               <Sparkles className="w-4 h-4 mr-2" />
-              Модели OpenAI
-            </TabsTrigger>
-            <TabsTrigger value="prompts" data-testid="tab-prompts">
-              Промпты
+              OpenAI Settings
             </TabsTrigger>
             <TabsTrigger value="users" data-testid="tab-users">
               <Users className="w-4 h-4 mr-2" />
@@ -628,353 +625,262 @@ export default function AdminPage() {
             )}
           </TabsContent>
 
-          {/* Models Tab */}
+          {/* OpenAI Settings Tab */}
           <TabsContent value="models" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Модель для валидации данных</CardTitle>
+                <CardTitle>Responses API Configuration</CardTitle>
                 <CardDescription>
-                  Используется для первичной проверки данных перед созданием объявления
+                  Настройки для GPT-5-mini с web_search для генерации объявлений
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {editMode['validationModel'] ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="validationModel">Модель</Label>
-                    <Input
-                      id="validationModel"
-                      defaultValue={getSetting('validationModel')}
-                      placeholder="gpt-4o-mini"
-                      data-testid="input-validation-model"
-                    />
-                    <div className="flex gap-2">
+              <CardContent className="space-y-6">
+                {/* Model Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="responsesModel">Модель</Label>
+                  {editMode['responsesModel'] ? (
+                    <div className="space-y-2">
+                      <select
+                        id="responsesModel"
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        defaultValue={getSetting('responsesModel') || 'gpt-5-mini'}
+                        data-testid="select-responses-model"
+                      >
+                        <option value="gpt-5-mini">gpt-5-mini</option>
+                        <option value="gpt-4o">gpt-4o</option>
+                      </select>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const select = document.getElementById('responsesModel') as HTMLSelectElement;
+                            handleSave('responsesModel', select.value);
+                          }}
+                          data-testid="button-save-responses-model"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Сохранить
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditMode({ ...editMode, responsesModel: false })}
+                        >
+                          Отмена
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <p className="font-mono text-sm">{getSetting('responsesModel') || 'gpt-5-mini'}</p>
                       <Button
                         size="sm"
-                        onClick={() => {
-                          const input = document.getElementById('validationModel') as HTMLInputElement;
-                          handleSave('validationModel', input.value);
-                        }}
-                        data-testid="button-save-validation-model"
+                        variant="outline"
+                        onClick={() => setEditMode({ ...editMode, responsesModel: true })}
                       >
-                        <Save className="w-4 h-4 mr-2" />
-                        Сохранить
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setEditMode({ ...editMode, validationModel: false })}
-                        data-testid="button-cancel-validation-model"
-                      >
-                        Отмена
+                        Изменить
                       </Button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-mono text-sm">{getSetting('validationModel')}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditMode({ ...editMode, validationModel: true })}
-                      data-testid="button-edit-validation-model"
-                    >
-                      Изменить
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Модель для создания объявлений</CardTitle>
-                <CardDescription>
-                  Используется при генерации заголовков и описаний
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {editMode['listingModel'] ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="listingModel">Модель</Label>
-                    <Input
-                      id="listingModel"
-                      defaultValue={getSetting('listingModel')}
-                      placeholder="gpt-4o-mini"
-                      data-testid="input-listing-model"
-                    />
-                    <div className="flex gap-2">
+                {/* Verbosity */}
+                <div className="space-y-2">
+                  <Label htmlFor="verbosity">Verbosity</Label>
+                  {editMode['verbosity'] ? (
+                    <div className="space-y-2">
+                      <select
+                        id="verbosity"
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        defaultValue={getSetting('verbosity') || 'medium'}
+                        data-testid="select-verbosity"
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                      </select>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const select = document.getElementById('verbosity') as HTMLSelectElement;
+                            handleSave('verbosity', select.value);
+                          }}
+                          data-testid="button-save-verbosity"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Сохранить
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditMode({ ...editMode, verbosity: false })}
+                        >
+                          Отмена
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <p className="font-mono text-sm">{getSetting('verbosity') || 'medium'}</p>
                       <Button
                         size="sm"
-                        onClick={() => {
-                          const input = document.getElementById('listingModel') as HTMLInputElement;
-                          handleSave('listingModel', input.value);
-                        }}
-                        data-testid="button-save-listing-model"
+                        variant="outline"
+                        onClick={() => setEditMode({ ...editMode, verbosity: true })}
                       >
-                        <Save className="w-4 h-4 mr-2" />
-                        Сохранить
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setEditMode({ ...editMode, listingModel: false })}
-                        data-testid="button-cancel-listing-model"
-                      >
-                        Отмена
+                        Изменить
                       </Button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-mono text-sm">{getSetting('listingModel')}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditMode({ ...editMode, listingModel: true })}
-                      data-testid="button-edit-listing-model"
-                    >
-                      Изменить
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Модель для поиска</CardTitle>
-                <CardDescription>
-                  Используется при интерпретации поисковых запросов
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {editMode['searchModel'] ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="searchModel">Модель</Label>
-                    <Input
-                      id="searchModel"
-                      defaultValue={getSetting('searchModel')}
-                      placeholder="gpt-4o-mini"
-                      data-testid="input-search-model"
-                    />
-                    <div className="flex gap-2">
+                {/* Reasoning Effort */}
+                <div className="space-y-2">
+                  <Label htmlFor="reasoningEffort">Reasoning Effort</Label>
+                  {editMode['reasoningEffort'] ? (
+                    <div className="space-y-2">
+                      <select
+                        id="reasoningEffort"
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        defaultValue={getSetting('reasoningEffort') || 'medium'}
+                        data-testid="select-reasoning-effort"
+                      >
+                        <option value="minimal">Minimal</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                      </select>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const select = document.getElementById('reasoningEffort') as HTMLSelectElement;
+                            handleSave('reasoningEffort', select.value);
+                          }}
+                          data-testid="button-save-reasoning-effort"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Сохранить
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditMode({ ...editMode, reasoningEffort: false })}
+                        >
+                          Отмена
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <p className="font-mono text-sm">{getSetting('reasoningEffort') || 'medium'}</p>
                       <Button
                         size="sm"
-                        onClick={() => {
-                          const input = document.getElementById('searchModel') as HTMLInputElement;
-                          handleSave('searchModel', input.value);
-                        }}
-                        data-testid="button-save-search-model"
+                        variant="outline"
+                        onClick={() => setEditMode({ ...editMode, reasoningEffort: true })}
                       >
-                        <Save className="w-4 h-4 mr-2" />
-                        Сохранить
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setEditMode({ ...editMode, searchModel: false })}
-                        data-testid="button-cancel-search-model"
-                      >
-                        Отмена
+                        Изменить
                       </Button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-mono text-sm">{getSetting('searchModel')}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditMode({ ...editMode, searchModel: true })}
-                      data-testid="button-edit-search-model"
-                    >
-                      Изменить
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  )}
+                </div>
 
-          {/* Prompts Tab */}
-          <TabsContent value="prompts" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Промпт для валидации данных</CardTitle>
-                <CardDescription>
-                  Системный промпт для первичной проверки данных перед созданием объявления
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {editMode['validationPrompt'] ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="validationPrompt">Промпт</Label>
-                    <Textarea
-                      id="validationPrompt"
-                      defaultValue={getSetting('validationPrompt')}
-                      rows={10}
-                      className="font-mono text-sm"
-                      data-testid="textarea-validation-prompt"
-                    />
-                    <div className="flex gap-2">
+                {/* Max Output Tokens */}
+                <div className="space-y-2">
+                  <Label htmlFor="maxOutputTokens">Max Output Tokens</Label>
+                  {editMode['maxOutputTokens'] ? (
+                    <div className="space-y-2">
+                      <Input
+                        id="maxOutputTokens"
+                        type="number"
+                        defaultValue={getSetting('maxOutputTokens') || '8192'}
+                        placeholder="8192"
+                        data-testid="input-max-output-tokens"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const input = document.getElementById('maxOutputTokens') as HTMLInputElement;
+                            handleSave('maxOutputTokens', input.value);
+                          }}
+                          data-testid="button-save-max-output-tokens"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Сохранить
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditMode({ ...editMode, maxOutputTokens: false })}
+                        >
+                          Отмена
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <p className="font-mono text-sm">{getSetting('maxOutputTokens') || '8192'}</p>
                       <Button
                         size="sm"
-                        onClick={() => {
-                          const textarea = document.getElementById('validationPrompt') as HTMLTextAreaElement;
-                          handleSave('validationPrompt', textarea.value);
-                        }}
-                        data-testid="button-save-validation-prompt"
+                        variant="outline"
+                        onClick={() => setEditMode({ ...editMode, maxOutputTokens: true })}
                       >
-                        <Save className="w-4 h-4 mr-2" />
-                        Сохранить
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setEditMode({ ...editMode, validationPrompt: false })}
-                        data-testid="button-cancel-validation-prompt"
-                      >
-                        Отмена
+                        Изменить
                       </Button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <pre className="p-4 bg-muted rounded-lg text-xs overflow-auto max-h-60">
-                      {getSetting('validationPrompt')}
-                    </pre>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditMode({ ...editMode, validationPrompt: true })}
-                      data-testid="button-edit-validation-prompt"
-                    >
-                      Изменить
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Промпт для создания объявлений</CardTitle>
-                <CardDescription>
-                  Системный промпт для генерации заголовков и описаний
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {editMode['listingPrompt'] ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="listingPrompt">Промпт</Label>
-                    <Textarea
-                      id="listingPrompt"
-                      defaultValue={getSetting('listingPrompt')}
-                      rows={10}
-                      className="font-mono text-sm"
-                      data-testid="textarea-listing-prompt"
-                    />
-                    <div className="flex gap-2">
+                {/* System Prompt */}
+                <div className="space-y-2">
+                  <Label htmlFor="systemPrompt">System Prompt</Label>
+                  {editMode['systemPrompt'] ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        id="systemPrompt"
+                        defaultValue={getSetting('systemPrompt')}
+                        rows={10}
+                        className="font-mono text-sm"
+                        placeholder="Системный промпт для Responses API..."
+                        data-testid="textarea-system-prompt"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const textarea = document.getElementById('systemPrompt') as HTMLTextAreaElement;
+                            handleSave('systemPrompt', textarea.value);
+                          }}
+                          data-testid="button-save-system-prompt"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Сохранить
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditMode({ ...editMode, systemPrompt: false })}
+                        >
+                          Отмена
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <pre className="p-4 bg-muted rounded-lg text-xs overflow-auto max-h-60">
+                        {getSetting('systemPrompt') || 'Не задан'}
+                      </pre>
                       <Button
                         size="sm"
-                        onClick={() => {
-                          const textarea = document.getElementById('listingPrompt') as HTMLTextAreaElement;
-                          handleSave('listingPrompt', textarea.value);
-                        }}
-                        data-testid="button-save-listing-prompt"
+                        variant="outline"
+                        onClick={() => setEditMode({ ...editMode, systemPrompt: true })}
                       >
-                        <Save className="w-4 h-4 mr-2" />
-                        Сохранить
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setEditMode({ ...editMode, listingPrompt: false })}
-                        data-testid="button-cancel-listing-prompt"
-                      >
-                        Отмена
+                        Изменить
                       </Button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <pre className="p-4 bg-muted rounded-lg text-xs overflow-auto max-h-60">
-                      {getSetting('listingPrompt')}
-                    </pre>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditMode({ ...editMode, listingPrompt: true })}
-                      data-testid="button-edit-listing-prompt"
-                    >
-                      Изменить
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Промпт для поиска</CardTitle>
-                <CardDescription>
-                  Системный промпт для интерпретации поисковых запросов
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {editMode['searchPrompt'] ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="searchPrompt">Промпт</Label>
-                    <Textarea
-                      id="searchPrompt"
-                      defaultValue={getSetting('searchPrompt')}
-                      rows={10}
-                      className="font-mono text-sm"
-                      data-testid="textarea-search-prompt"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          const textarea = document.getElementById('searchPrompt') as HTMLTextAreaElement;
-                          handleSave('searchPrompt', textarea.value);
-                        }}
-                        data-testid="button-save-search-prompt"
-                      >
-                        <Save className="w-4 h-4 mr-2" />
-                        Сохранить
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setEditMode({ ...editMode, searchPrompt: false })}
-                        data-testid="button-cancel-search-prompt"
-                      >
-                        Отмена
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <pre className="p-4 bg-muted rounded-lg text-xs overflow-auto max-h-60">
-                      {getSetting('searchPrompt')}
-                    </pre>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditMode({ ...editMode, searchPrompt: true })}
-                      data-testid="button-edit-search-prompt"
-                    >
-                      Изменить
-                    </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
