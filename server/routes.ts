@@ -1,11 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import "./express-session.d.ts";
 import { storage } from "./storage";
 import { insertBoatSchema, registerUserSchema, loginUserSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { interpretSearchQuery, validateDescription, generateListingWithWebSearch, generateBoatListingWithResponses } from "./openai";
 import { z } from "zod";
-import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { upload, getFileUrl } from "./fileStorage";
 import { registerUser, loginUser } from "./auth";
 import { setupWebSocket, broadcastBoatUpdate } from "./websocket";
 
@@ -451,47 +452,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Object Storage endpoints
-  app.get("/objects/:objectPath(*)", async (req, res) => {
-    const objectStorageService = new ObjectStorageService();
+  // File upload endpoint
+  app.post("/api/upload", upload.single("file"), async (req, res) => {
     try {
-      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
-      objectStorageService.downloadObject(objectFile, res);
-    } catch (error) {
-      console.error("Error getting object:", error);
-      if (error instanceof ObjectNotFoundError) {
-        return res.sendStatus(404);
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
       }
-      return res.sendStatus(500);
-    }
-  });
-
-  app.post("/api/objects/upload", async (req, res) => {
-    try {
-      const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      const normalizedPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
-      res.json({ uploadURL, normalizedPath });
+      const fileUrl = getFileUrl(req.file.filename);
+      res.json({ url: fileUrl });
     } catch (error: any) {
-      console.error("Error getting upload URL:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.post("/api/objects/download-url", async (req, res) => {
-    try {
-      const { objectPath } = req.body;
-      if (!objectPath) {
-        return res.status(400).json({ error: "objectPath is required" });
-      }
-      const objectStorageService = new ObjectStorageService();
-      const downloadURL = await objectStorageService.getObjectEntityDownloadURL(objectPath);
-      res.json({ downloadURL });
-    } catch (error: any) {
-      console.error("Error getting download URL:", error);
-      if (error instanceof ObjectNotFoundError) {
-        return res.status(404).json({ error: "Object not found" });
-      }
+      console.error("Error uploading file:", error);
       res.status(500).json({ error: error.message });
     }
   });

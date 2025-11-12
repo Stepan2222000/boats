@@ -6,6 +6,7 @@ dist
 
 # Local state
 .local/
+uploads/
 
 # Environment variables
 .env
